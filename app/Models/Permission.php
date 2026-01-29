@@ -44,6 +44,7 @@ class Permission extends Model
             ['name' => 'roles.update', 'display_name' => 'Update Roles', 'description' => 'Can update roles'],
             ['name' => 'roles.delete', 'display_name' => 'Delete Roles', 'description' => 'Can soft delete roles'],
             ['name' => 'roles.restore', 'display_name' => 'Restore Roles', 'description' => 'Can restore deleted roles'],
+            ['name' => 'roles.force-delete', 'display_name' => 'Permanently Delete Roles', 'description' => 'Can permanently delete roles'],
             ['name' => 'roles.seed', 'display_name' => 'Seed System Roles', 'description' => 'Can seed default system roles for companies'],
         ],
         'users' => [
@@ -52,6 +53,7 @@ class Permission extends Model
             ['name' => 'users.update', 'display_name' => 'Update Users', 'description' => 'Can update existing users'],
             ['name' => 'users.delete', 'display_name' => 'Delete Users', 'description' => 'Can soft delete users'],
             ['name' => 'users.restore', 'display_name' => 'Restore Users', 'description' => 'Can restore deleted users'],
+            ['name' => 'users.force-delete', 'display_name' => 'Permanently Delete Users', 'description' => 'Can permanently delete users'],
             ['name' => 'users.assign-projects', 'display_name' => 'Assign Users to Projects', 'description' => 'Can assign users to projects'],
         ],
     ];
