@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -49,11 +50,26 @@ Route::prefix('v1')->group(function () {
         ->name('roles.restore')
         ->withTrashed();
 
-    // Get default system roles configuration
     Route::get('roles-config/system', [RoleController::class, 'systemRoles'])
         ->name('roles.system-config');
 
-    // Seed system roles for a company
     Route::post('roles-config/seed', [RoleController::class, 'seedSystemRoles'])
         ->name('roles.seed');
+
+    // ==================== USER ROUTES ====================
+    Route::apiResource('users', UserController::class);
+
+    Route::post('users/{user}/restore', [UserController::class, 'restore'])
+        ->name('users.restore')
+        ->withTrashed();
+
+    // Project assignment routes
+    Route::get('users/{user}/projects', [UserController::class, 'projects'])
+        ->name('users.projects');
+
+    Route::post('users/{user}/projects', [UserController::class, 'assignProjects'])
+        ->name('users.assign-projects');
+
+    Route::delete('users/{user}/projects/{project}', [UserController::class, 'removeProject'])
+        ->name('users.remove-project');
 });

@@ -142,4 +142,12 @@ class Company extends Model
     {
         return $this->hasMany(Role::class);
     }
+
+    /**
+     * Get all users for the company.
+     */
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
 }

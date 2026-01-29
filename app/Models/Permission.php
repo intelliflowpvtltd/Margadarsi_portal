@@ -46,6 +46,14 @@ class Permission extends Model
             ['name' => 'roles.restore', 'display_name' => 'Restore Roles', 'description' => 'Can restore deleted roles'],
             ['name' => 'roles.seed', 'display_name' => 'Seed System Roles', 'description' => 'Can seed default system roles for companies'],
         ],
+        'users' => [
+            ['name' => 'users.view', 'display_name' => 'View Users', 'description' => 'Can view and list users'],
+            ['name' => 'users.create', 'display_name' => 'Create Users', 'description' => 'Can create new users'],
+            ['name' => 'users.update', 'display_name' => 'Update Users', 'description' => 'Can update existing users'],
+            ['name' => 'users.delete', 'display_name' => 'Delete Users', 'description' => 'Can soft delete users'],
+            ['name' => 'users.restore', 'display_name' => 'Restore Users', 'description' => 'Can restore deleted users'],
+            ['name' => 'users.assign-projects', 'display_name' => 'Assign Users to Projects', 'description' => 'Can assign users to projects'],
+        ],
     ];
 
     // ==================== RELATIONSHIPS ====================

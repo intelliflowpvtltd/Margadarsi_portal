@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -190,6 +191,16 @@ class Project extends Model
     public function amenities(): HasMany
     {
         return $this->hasMany(ProjectAmenity::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Get all users assigned to this project.
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_projects')
+            ->withPivot('assigned_at', 'assigned_by')
+            ->withTimestamps();
     }
 
     // ==================== ACCESSORS ====================
