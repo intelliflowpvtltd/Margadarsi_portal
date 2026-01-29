@@ -15,21 +15,20 @@ class CheckPermission
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        // For now, since we don't have authentication yet, we'll just return a 403
-        // In real implementation, you'd check: auth()->user()->hasPermission($permission)
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            return response()->json([
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
 
-        // TODO: Uncomment when authentication is implemented
-        // if (!auth()->check()) {
-        //     return response()->json([
-        //         'message' => 'Unauthenticated.',
-        //     ], 401);
-        // }
-
-        // if (!auth()->user()->hasPermission($permission)) {
-        //     return response()->json([
-        //         'message' => 'Unauthorized. Permission required: ' . $permission,
-        //     ], 403);
-        // }
+        // Check if user has the required permission
+        if (!auth()->user()->hasPermission($permission)) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+                'required_permission' => $permission,
+            ], 403);
+        }
 
         return $next($request);
     }
