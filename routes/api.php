@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\RoleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,7 +39,21 @@ Route::prefix('v1')->group(function () {
         ->name('projects.force-delete')
         ->withTrashed();
 
-    // Project specification
     Route::put('projects/{project}/specification', [ProjectController::class, 'updateSpecification'])
         ->name('projects.specification');
+
+    // ==================== ROLE ROUTES ====================
+    Route::apiResource('roles', RoleController::class);
+
+    Route::post('roles/{role}/restore', [RoleController::class, 'restore'])
+        ->name('roles.restore')
+        ->withTrashed();
+
+    // Get default system roles configuration
+    Route::get('roles-config/system', [RoleController::class, 'systemRoles'])
+        ->name('roles.system-config');
+
+    // Seed system roles for a company
+    Route::post('roles-config/seed', [RoleController::class, 'seedSystemRoles'])
+        ->name('roles.seed');
 });

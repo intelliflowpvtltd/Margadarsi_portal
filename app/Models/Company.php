@@ -134,4 +134,12 @@ class Company extends Model
     {
         return $this->hasMany(Project::class);
     }
+
+    /**
+     * Get all roles for the company.
+     */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
 }
