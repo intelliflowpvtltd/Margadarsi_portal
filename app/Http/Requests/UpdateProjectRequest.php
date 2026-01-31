@@ -24,7 +24,7 @@ class UpdateProjectRequest extends FormRequest
 
             // Optional fields
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('projects', 'slug')->ignore($this->project)],
-            'logo' => 'nullable|string|max:255',
+            'logo' => 'nullable|file|image|max:2048', // Accept image files up to 2MB
             'status' => 'nullable|in:upcoming,ongoing,completed,sold_out',
             'description' => 'nullable|string',
             'highlights' => 'nullable|array',

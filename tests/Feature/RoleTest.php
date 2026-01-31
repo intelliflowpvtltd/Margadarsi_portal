@@ -3,20 +3,52 @@
 namespace Tests\Feature;
 
 use App\Models\Company;
+use App\Models\Permission;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class RoleTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company $company;
+    protected User $user;
+    protected Company $company;
+    protected Role $role;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Seed permissions
+        Permission::seedPermissions();
+
+        // Create a company
         $this->company = Company::factory()->create();
+
+        // Create a Super Admin role with all permissions
+        $this->role = Role::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'Super Admin',
+            'slug' => 'super-admin',
+            'hierarchy_level' => 1,
+            'is_system' => true,
+        ]);
+
+        // Assign all permissions to the role
+        $this->role->permissions()->sync(Permission::all()->pluck('id'));
+
+        // Create a user with Super Admin role
+        $this->user = User::factory()->create([
+            'company_id' => $this->company->id,
+            'role_id' => $this->role->id,
+            'is_active' => true,
+        ]);
+
+        // Authenticate the user for all tests
+        Sanctum::actingAs($this->user, $this->user->getPermissions());
     }
 
     public function test_can_list_all_roles_for_company(): void
@@ -26,13 +58,12 @@ class RoleTest extends TestCase
         $response = $this->getJson("/api/v1/roles?company_id={$this->company->id}");
 
         $response->assertStatus(200)
-            ->assertJsonCount(3, 'data');
+            ->assertJsonCount(4, 'data'); // 3 + 1 from setUp
     }
 
     public function test_roles_are_ordered_by_hierarchy_level(): void
     {
         Role::factory()->create(['company_id' => $this->company->id, 'hierarchy_level' => 5]);
-        Role::factory()->create(['company_id' => $this->company->id, 'hierarchy_level' => 1]);
         Role::factory()->create(['company_id' => $this->company->id, 'hierarchy_level' => 3]);
 
         $response = $this->getJson("/api/v1/roles?company_id={$this->company->id}");
@@ -40,6 +71,7 @@ class RoleTest extends TestCase
         $response->assertStatus(200);
         $data = $response->json('data');
 
+        // First should be hierarchy level 1 (Super Admin from setUp)
         $this->assertEquals(1, $data[0]['hierarchy_level']);
         $this->assertEquals(3, $data[1]['hierarchy_level']);
         $this->assertEquals(5, $data[2]['hierarchy_level']);
@@ -116,7 +148,7 @@ class RoleTest extends TestCase
 
     public function test_can_update_role(): void
     {
-        $role = Role::factory()->create(['company_id' => $this->company->id]);
+        $role = Role::factory()->create(['company_id' => $this->company->id, 'is_system' => false]);
 
         $response = $this->putJson("/api/v1/roles/{$role->id}", [
             'name' => 'Updated Role Name',
@@ -153,28 +185,33 @@ class RoleTest extends TestCase
 
     public function test_can_seed_system_roles_for_company(): void
     {
+        // Use a new company without system roles
+        $newCompany = Company::factory()->create();
+
         $response = $this->postJson('/api/v1/roles-config/seed', [
-            'company_id' => $this->company->id,
+            'company_id' => $newCompany->id,
         ]);
 
         $response->assertStatus(201)
             ->assertJsonPath('message', 'System roles created successfully.');
 
         $this->assertDatabaseHas('roles', [
-            'company_id' => $this->company->id,
-            'slug' => 'super-admin',
+            'company_id' => $newCompany->id,
+            'slug' => 'super_admin',
             'is_system' => true,
         ]);
 
-        $this->assertEquals(7, Role::forCompany($this->company->id)->system()->count());
+        $this->assertEquals(8, Role::forCompany($newCompany->id)->system()->count());
     }
 
     public function test_cannot_seed_system_roles_twice(): void
     {
-        Role::createSystemRolesForCompany($this->company->id);
+        // Use a new company and seed it first
+        $newCompany = Company::factory()->create();
+        Role::createSystemRolesForCompany($newCompany->id);
 
         $response = $this->postJson('/api/v1/roles-config/seed', [
-            'company_id' => $this->company->id,
+            'company_id' => $newCompany->id,
         ]);
 
         $response->assertStatus(409)
@@ -186,14 +223,14 @@ class RoleTest extends TestCase
         $response = $this->getJson('/api/v1/roles-config/system');
 
         $response->assertStatus(200)
-            ->assertJsonCount(7, 'data');
+            ->assertJsonCount(8, 'data');
     }
 
     public function test_company_has_many_roles(): void
     {
         Role::factory()->count(3)->create(['company_id' => $this->company->id]);
 
-        $this->assertCount(3, $this->company->roles);
+        $this->assertCount(4, $this->company->roles); // 3 + 1 from setUp
     }
 
     public function test_role_hierarchy_comparison(): void

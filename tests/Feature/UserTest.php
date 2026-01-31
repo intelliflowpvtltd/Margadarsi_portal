@@ -3,25 +3,63 @@
 namespace Tests\Feature;
 
 use App\Models\Company;
+use App\Models\Permission;
 use App\Models\Project;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class UserTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $authUser;
     protected Company $company;
     protected Role $role;
+    protected Role $superAdminRole;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        // Seed permissions
+        Permission::seedPermissions();
+
+        // Create a company
         $this->company = Company::factory()->create();
-        $this->role = Role::factory()->create(['company_id' => $this->company->id]);
+
+        // Create a Super Admin role with all permissions
+        $this->superAdminRole = Role::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'Super Admin',
+            'slug' => 'super-admin',
+            'hierarchy_level' => 1,
+            'is_system' => true,
+        ]);
+
+        // Assign all permissions to the super admin role
+        $this->superAdminRole->permissions()->sync(Permission::all()->pluck('id'));
+
+        // Create another role for regular users
+        $this->role = Role::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'Sales Executive',
+            'slug' => 'sales-executive',
+            'hierarchy_level' => 5,
+            'is_system' => true,
+        ]);
+
+        // Create an authenticated user (Super Admin)
+        $this->authUser = User::factory()->create([
+            'company_id' => $this->company->id,
+            'role_id' => $this->superAdminRole->id,
+            'is_active' => true,
+        ]);
+
+        // Authenticate the user for all tests
+        Sanctum::actingAs($this->authUser, $this->authUser->getPermissions());
     }
 
     public function test_can_list_all_users_for_company(): void
@@ -34,7 +72,7 @@ class UserTest extends TestCase
         $response = $this->getJson("/api/v1/users?company_id={$this->company->id}");
 
         $response->assertStatus(200)
-            ->assertJsonCount(3, 'data');
+            ->assertJsonCount(4, 'data'); // 3 + 1 auth user from setUp
     }
 
     public function test_can_create_user(): void
@@ -45,8 +83,8 @@ class UserTest extends TestCase
             'first_name' => 'John',
             'last_name' => 'Doe',
             'email' => 'john@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'phone' => '9876543210',
             'is_active' => true,
         ];
@@ -77,8 +115,8 @@ class UserTest extends TestCase
             'first_name' => 'Jane',
             'last_name' => 'Doe',
             'email' => 'duplicate@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ];
 
         $response = $this->postJson('/api/v1/users', $data);
@@ -104,8 +142,8 @@ class UserTest extends TestCase
             'first_name' => 'Jane',
             'last_name' => 'Doe',
             'email' => 'same@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ];
 
         $response = $this->postJson('/api/v1/users', $data);
@@ -204,7 +242,7 @@ class UserTest extends TestCase
             'role_id' => $this->role->id,
         ]);
 
-        $this->assertCount(3, $this->company->users);
+        $this->assertCount(4, $this->company->users); // 3 + 1 auth user from setUp
     }
 
     public function test_user_full_name_accessor(): void

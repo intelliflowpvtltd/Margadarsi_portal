@@ -33,13 +33,14 @@ class Role extends Model
      * Default hierarchy levels for system roles.
      */
     public const HIERARCHY_LEVELS = [
-        'super-admin' => 1,
+        'super_admin' => 1,
         'admin' => 2,
-        'sales-manager' => 3,
-        'senior-sales-executive' => 4,
-        'sales-executive' => 5,
-        'team-leader' => 6,
-        'tele-caller' => 7,
+        'sales_director' => 3,
+        'sales_manager' => 4,
+        'project_manager' => 5,
+        'team_lead' => 6,
+        'telecaller' => 7,
+        'channel_partner' => 8,
     ];
 
     /**
@@ -48,45 +49,51 @@ class Role extends Model
     public const SYSTEM_ROLES = [
         [
             'name' => 'Super Admin',
-            'slug' => 'super-admin',
-            'description' => 'System Administrator with full access to all features',
+            'slug' => 'super_admin',
+            'description' => 'Full system access, can manage everything',
             'hierarchy_level' => 1,
         ],
         [
             'name' => 'Admin',
             'slug' => 'admin',
-            'description' => 'Company administrator with broad access',
+            'description' => 'Company-level admin, manages projects & users',
             'hierarchy_level' => 2,
         ],
         [
-            'name' => 'Sales Manager',
-            'slug' => 'sales-manager',
-            'description' => 'Manages sales team and oversees deals',
+            'name' => 'Sales Director',
+            'slug' => 'sales_director',
+            'description' => 'Sees all projects, all teams, strategic reports',
             'hierarchy_level' => 3,
         ],
         [
-            'name' => 'Senior Sales Executive',
-            'slug' => 'senior-sales-executive',
-            'description' => 'Experienced sales executive with additional privileges',
+            'name' => 'Sales Manager',
+            'slug' => 'sales_manager',
+            'description' => 'Manages specific teams, views team reports',
             'hierarchy_level' => 4,
         ],
         [
-            'name' => 'Sales Executive',
-            'slug' => 'sales-executive',
-            'description' => 'Handles leads and customer interactions',
+            'name' => 'Project Manager',
+            'slug' => 'project_manager',
+            'description' => 'Manages specific projects',
             'hierarchy_level' => 5,
         ],
         [
-            'name' => 'Team Leader',
-            'slug' => 'team-leader',
-            'description' => 'Leads a sub-team of sales executives',
+            'name' => 'Team Lead',
+            'slug' => 'team_lead',
+            'description' => 'Manages team members, can reassign within team',
             'hierarchy_level' => 6,
         ],
         [
-            'name' => 'Tele Caller',
-            'slug' => 'tele-caller',
-            'description' => 'Handles phone inquiries and initial lead qualification',
+            'name' => 'Telecaller',
+            'slug' => 'telecaller',
+            'description' => 'Handles leads, logs calls, schedules visits',
             'hierarchy_level' => 7,
+        ],
+        [
+            'name' => 'Channel Partner',
+            'slug' => 'channel_partner',
+            'description' => 'External user, separate portal access',
+            'hierarchy_level' => 8,
         ],
     ];
 
@@ -120,6 +127,14 @@ class Role extends Model
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class, 'role_permissions');
+    }
+
+    /**
+     * Get all users with this role.
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class, 'role_id');
     }
 
     // ==================== ACCESSORS ====================

@@ -22,7 +22,8 @@ class PermissionTest extends TestCase
 
     public function test_all_permissions_are_seeded(): void
     {
-        $this->assertEquals(19, Permission::count());
+        // companies: 6, projects: 7, roles: 7, users: 7, teams: 4, leads: 8, incentives: 4, reports: 4, settings: 2 = 49 total
+        $this->assertEquals(49, Permission::count());
     }
 
     public function test_permissions_grouped_by_module(): void
@@ -30,10 +31,12 @@ class PermissionTest extends TestCase
         $companiesPerms = Permission::forModule('companies')->count();
         $projectsPerms = Permission::forModule('projects')->count();
         $rolesPerms = Permission::forModule('roles')->count();
+        $usersPerms = Permission::forModule('users')->count();
 
         $this->assertEquals(6, $companiesPerms);
         $this->assertEquals(7, $projectsPerms);
-        $this->assertEquals(6, $rolesPerms);
+        $this->assertEquals(7, $rolesPerms);
+        $this->assertEquals(7, $usersPerms);
     }
 
     public function test_can_assign_permissions_to_role(): void
@@ -65,7 +68,7 @@ class PermissionTest extends TestCase
         // Create system roles
         Role::createSystemRolesForCompany($company->id);
 
-        $superAdmin = Role::where('slug', 'super-admin')
+        $superAdmin = Role::where('slug', 'super_admin')
             ->where('company_id', $company->id)
             ->first();
 
@@ -73,7 +76,7 @@ class PermissionTest extends TestCase
         $allPermissions = Permission::all();
         $superAdmin->permissions()->sync($allPermissions->pluck('id'));
 
-        $this->assertEquals(19, $superAdmin->permissions()->count());
+        $this->assertEquals(49, $superAdmin->permissions()->count());
     }
 
     public function test_sales_executive_has_limited_permissions(): void
@@ -81,7 +84,7 @@ class PermissionTest extends TestCase
         $company = Company::factory()->create();
         Role::createSystemRolesForCompany($company->id);
 
-        $salesExec = Role::where('slug', 'sales-executive')
+        $salesExec = Role::where('slug', 'telecaller')
             ->where('company_id', $company->id)
             ->first();
 
@@ -118,10 +121,11 @@ class PermissionTest extends TestCase
         $names = Permission::getAllPermissionNames();
 
         $this->assertIsArray($names);
-        $this->assertCount(19, $names);
+        $this->assertCount(49, $names);
         $this->assertContains('companies.view', $names);
         $this->assertContains('projects.create', $names);
         $this->assertContains('roles.seed', $names);
+        $this->assertContains('users.assign-projects', $names);
     }
 
     public function test_permission_unique_constraint(): void

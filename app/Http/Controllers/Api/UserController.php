@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -85,14 +86,19 @@ class UserController extends Controller
         $projectIds = $data['project_ids'] ?? [];
         unset($data['project_ids']);
 
-        $user = User::create($data);
+        // Use transaction for multi-step operation
+        $user = DB::transaction(function () use ($data, $projectIds) {
+            $user = User::create($data);
 
-        // Assign to projects if provided
-        if (!empty($projectIds)) {
-            foreach ($projectIds as $projectId) {
-                $user->assignToProject($projectId);
+            // Assign to projects if provided
+            if (!empty($projectIds)) {
+                foreach ($projectIds as $projectId) {
+                    $user->assignToProject($projectId);
+                }
             }
-        }
+
+            return $user;
+        });
 
         return response()->json([
             'message' => 'User created successfully.',
@@ -177,7 +183,7 @@ class UserController extends Controller
         ]);
 
         $projectIds = $request->input('project_ids');
-        $assignedBy = null; // TODO: Get from authenticated user once auth is implemented
+        $assignedBy = request()->user()?->id; // Get from authenticated user
 
         foreach ($projectIds as $projectId) {
             $user->assignToProject($projectId, $assignedBy);

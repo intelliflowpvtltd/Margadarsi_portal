@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('lead_activities', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('lead_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            
+            $table->string('activity_type', 50); // status_change, stage_change, assignment, call, visit, note, email, sms, whatsapp
+            $table->string('description', 500);
+            
+            // Change tracking
+            $table->string('old_value', 100)->nullable();
+            $table->string('new_value', 100)->nullable();
+            
+            // Metadata
+            $table->json('metadata')->nullable();
+            
+            // Engagement
+            $table->integer('engagement_points')->default(0);
+            
+            $table->timestamps();
+
+            $table->index(['lead_id', 'created_at']);
+            $table->index(['user_id', 'activity_type']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('lead_activities');
+    }
+};

@@ -3,20 +3,53 @@
 namespace Tests\Feature;
 
 use App\Models\Company;
+use App\Models\Permission;
 use App\Models\Project;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ProjectTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company $company;
+    protected User $user;
+    protected Company $company;
+    protected Role $role;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Seed permissions
+        Permission::seedPermissions();
+
+        // Create a company
         $this->company = Company::factory()->create();
+
+        // Create a Super Admin role with all permissions
+        $this->role = Role::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'Super Admin',
+            'slug' => 'super-admin',
+            'hierarchy_level' => 1,
+            'is_system' => true,
+        ]);
+
+        // Assign all permissions to the role
+        $this->role->permissions()->sync(Permission::all()->pluck('id'));
+
+        // Create a user with Super Admin role
+        $this->user = User::factory()->create([
+            'company_id' => $this->company->id,
+            'role_id' => $this->role->id,
+            'is_active' => true,
+        ]);
+
+        // Authenticate the user for all tests
+        Sanctum::actingAs($this->user, $this->user->getPermissions());
     }
 
     public function test_can_list_all_projects(): void

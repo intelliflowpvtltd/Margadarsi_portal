@@ -21,13 +21,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     // ==================== PUBLIC AUTH ROUTES ====================
-    Route::post('auth/login', [AuthController::class, 'login']);
-    Route::post('auth/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-    Route::post('auth/verify-otp', [PasswordResetController::class, 'verifyOtp']);
-    Route::post('auth/reset-password', [PasswordResetController::class, 'resetPassword']);
+    // Rate limiting to prevent brute force attacks
+    Route::post('auth/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1'); // 5 attempts per minute
+    Route::post('auth/forgot-password', [PasswordResetController::class, 'forgotPassword'])
+        ->middleware('throttle:3,1'); // 3 attempts per minute
+    Route::post('auth/verify-otp', [PasswordResetController::class, 'verifyOtp'])
+        ->middleware('throttle:5,1'); // 5 attempts per minute
+    Route::post('auth/reset-password', [PasswordResetController::class, 'resetPassword'])
+        ->middleware('throttle:3,1'); // 3 attempts per minute
 
     // ==================== PROTECTED AUTH ROUTES ====================
-    Route::middleware('auth:sanctum')->group(function () {
+    // Support both Sanctum tokens (for external APIs) and web sessions (for Blade frontend)
+    Route::middleware('auth:sanctum,web')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('auth/me', [AuthController::class, 'me']);
 
@@ -108,5 +114,35 @@ Route::prefix('v1')->group(function () {
             ->middleware('permission:users.assign-projects');
         Route::delete('users/{user}/projects/{project}', [UserController::class, 'removeProject'])
             ->middleware('permission:users.assign-projects');
+
+        // ==================== LEAD ROUTES ====================
+        Route::get('leads', [\App\Http\Controllers\Api\LeadController::class, 'index'])
+            ->middleware('permission:leads.view');
+        Route::post('leads', [\App\Http\Controllers\Api\LeadController::class, 'store'])
+            ->middleware('permission:leads.create');
+        Route::get('leads/statistics', [\App\Http\Controllers\Api\LeadController::class, 'statistics'])
+            ->middleware('permission:leads.view');
+        Route::get('leads/{lead}', [\App\Http\Controllers\Api\LeadController::class, 'show'])
+            ->middleware('permission:leads.view');
+        Route::put('leads/{lead}', [\App\Http\Controllers\Api\LeadController::class, 'update'])
+            ->middleware('permission:leads.update');
+        Route::delete('leads/{lead}', [\App\Http\Controllers\Api\LeadController::class, 'destroy'])
+            ->middleware('permission:leads.delete');
+
+        // Lead Workflow Actions
+        Route::post('leads/{lead}/call', [\App\Http\Controllers\Api\LeadController::class, 'logCall'])
+            ->middleware('permission:leads.log-call');
+        Route::post('leads/{lead}/transition', [\App\Http\Controllers\Api\LeadController::class, 'transitionStatus'])
+            ->middleware('permission:leads.update');
+        Route::post('leads/{lead}/qualify', [\App\Http\Controllers\Api\LeadController::class, 'markQualified'])
+            ->middleware('permission:leads.qualify');
+        Route::post('leads/{lead}/disqualify', [\App\Http\Controllers\Api\LeadController::class, 'markNotQualified'])
+            ->middleware('permission:leads.disqualify');
+        Route::post('leads/{lead}/handover', [\App\Http\Controllers\Api\LeadController::class, 'handOver'])
+            ->middleware('permission:leads.handover');
+        Route::post('leads/{lead}/mark-lost', [\App\Http\Controllers\Api\LeadController::class, 'markLost'])
+            ->middleware('permission:leads.update');
+        Route::post('leads/{lead}/followup', [\App\Http\Controllers\Api\LeadController::class, 'scheduleFollowup'])
+            ->middleware('permission:leads.update');
     });
 });

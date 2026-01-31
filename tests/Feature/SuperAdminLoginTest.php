@@ -69,9 +69,9 @@ class SuperAdminLoginTest extends TestCase
             ->assertJsonPath('user.email', 'superadmin@test.com')
             ->assertJsonPath('message', 'Login successful.');
 
-        // Verify all 25 permissions are included
+        // Verify all 49 permissions are included
         $returnedPermissions = $response->json('permissions');
-        $this->assertCount(25, $returnedPermissions);
+        $this->assertCount(49, $returnedPermissions);
         $this->assertContains('companies.create', $returnedPermissions);
         $this->assertContains('companies.force-delete', $returnedPermissions);
         $this->assertContains('projects.create', $returnedPermissions);
@@ -104,8 +104,8 @@ class SuperAdminLoginTest extends TestCase
             ->assertJsonPath('user.email', 'superadmin@margadarsi.com')
             ->assertJsonPath('message', 'Login successful.');
 
-        // Verify 25 permissions
-        $this->assertCount(25, $response->json('permissions'));
+        // Verify 49 permissions
+        $this->assertCount(49, $response->json('permissions'));
 
         // Test token works
         $token = $response->json('token');
@@ -118,7 +118,7 @@ class SuperAdminLoginTest extends TestCase
         echo "✅ Email: superadmin@margadarsi.com\n";
         echo "✅ Password: password123\n";
         echo "✅ Token Generated: " . substr($token, 0, 20) . "...\n";
-        echo "✅ Permissions Count: 25\n";
+        echo "✅ Permissions Count: 49\n";
         echo "✅ Protected Route Access: WORKING\n";
     }
 

@@ -27,11 +27,12 @@ class PasswordResetController extends Controller
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         // Store in database with 10-minute expiration
+        // OTP is hashed for security - plain text is only sent via email
         DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $request->email],
             [
-                'token' => Hash::make($otp), // Hashed for security
-                'otp' => $otp, // Plain text for email
+                'token' => Hash::make($otp), // Hashed OTP for verification
+                'otp' => null, // Never store plain OTP
                 'expires_at' => now()->addMinutes(10),
                 'created_at' => now(),
             ]
@@ -68,8 +69,8 @@ class PasswordResetController extends Controller
             ], 422);
         }
 
-        // Verify OTP
-        if ($resetRecord->otp !== $request->otp) {
+        // Verify OTP using hash comparison (secure)
+        if (!Hash::check($request->otp, $resetRecord->token)) {
             return response()->json([
                 'message' => 'Invalid OTP. Please check and try again.',
             ], 422);
@@ -128,6 +129,9 @@ class PasswordResetController extends Controller
         $user->update([
             'password' => $request->password, // Will be hashed by model cast
         ]);
+
+        // Invalidate all existing tokens for security
+        $user->tokens()->delete();
 
         // Delete reset token
         DB::table('password_reset_tokens')->where('email', $resetRecord->email)->delete();

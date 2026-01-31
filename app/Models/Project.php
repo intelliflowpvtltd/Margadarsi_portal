@@ -199,8 +199,40 @@ class Project extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_projects')
-            ->withPivot('assigned_at', 'assigned_by')
+            ->using(UserProject::class)
+            ->withPivot([
+                'access_level',
+                'is_available_for_leads',
+                'max_active_leads',
+                'current_active_leads',
+                'assignment_weight',
+                'last_lead_assigned_at',
+                'assigned_at',
+                'assigned_by'
+            ])
             ->withTimestamps();
+    }
+
+    /**
+     * Get user_projects pivot records for this project.
+     */
+    public function userProjects()
+    {
+        return $this->hasMany(UserProject::class);
+    }
+
+    /**
+     * Get next user for round-robin lead assignment.
+     */
+    public function getNextAssignee(): ?User
+    {
+        $userProject = UserProject::where('project_id', $this->id)
+            ->availableForLeads()
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->roundRobinOrder()
+            ->first();
+
+        return $userProject?->user;
     }
 
     // ==================== ACCESSORS ====================

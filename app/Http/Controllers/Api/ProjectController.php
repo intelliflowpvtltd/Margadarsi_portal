@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
+use App\Http\Requests\UpdateSpecificationRequest;
 use App\Http\Resources\ProjectResource;
 use App\Models\Project;
 use App\Models\ResidentialSpec;
@@ -14,6 +15,7 @@ use App\Models\OpenPlotSpec;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class ProjectController extends Controller
 {
@@ -93,10 +95,15 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request): JsonResponse
     {
-        $project = Project::create($request->validated());
+        // Use transaction for multi-step operation
+        $project = DB::transaction(function () use ($request) {
+            $project = Project::create($request->validated());
 
-        // Create type-specific specification if provided
-        $this->createSpecification($project, $request);
+            // Create type-specific specification if provided
+            $this->createSpecification($project, $request);
+
+            return $project;
+        });
 
         return response()->json([
             'message' => 'Project created successfully.',
@@ -185,9 +192,9 @@ class ProjectController extends Controller
     /**
      * Update project specification.
      */
-    public function updateSpecification(Request $request, Project $project): JsonResponse
+    public function updateSpecification(UpdateSpecificationRequest $request, Project $project): JsonResponse
     {
-        $specData = $request->all();
+        $specData = $request->validated();
 
         $spec = match ($project->type) {
             'residential' => $project->residentialSpec()->updateOrCreate(

@@ -24,7 +24,7 @@ class StoreProjectRequest extends FormRequest
 
             // Optional basic details
             'slug' => 'nullable|string|max:255|unique:projects,slug',
-            'logo' => 'nullable|string|max:255',
+            'logo' => 'nullable|file|image|max:2048', // Accept image files up to 2MB
             'status' => 'nullable|in:upcoming,ongoing,completed,sold_out',
             'description' => 'nullable|string',
             'highlights' => 'nullable|array',

@@ -1,0 +1,394 @@
+﻿================================================
+   MARGADARSI PORTAL API TESTING
+================================================
+
+
+≡ƒô▒ PHASE 1: AUTHENTICATION ENDPOINTS
+==========================================
+
+≡ƒº¬ Testing: Login (Super Admin)
+   POST /auth/login
+   Γ£à Status: 200 (Expected: 200)
+   ≡ƒöæ Token: 3|gyLzKkE7evTFPHcZ9c...
+   ≡ƒæñ User: Super Admin
+   ≡ƒöÉ Permissions: 27 permissions
+
+≡ƒº¬ Testing: Get Current User (/auth/me)
+   GET /auth/me
+   Γ£à Status: 200 (Expected: 200)
+
+
+≡ƒÅó PHASE 2: COMPANIES CRUD
+==========================================
+
+≡ƒº¬ Testing: List Companies
+   GET /companies
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Create Company
+   POST /companies
+   Γ£à Status: 201 (Expected: 201)
+   ≡ƒô¥ Created Company ID: 3
+
+≡ƒº¬ Testing: Show Company #3
+   GET /companies/3
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Update Company #3
+   PUT /companies/3
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Soft Delete Company #3
+   DELETE /companies/3
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Restore Company #3
+   POST /companies/3/restore
+   Γ£à Status: 200 (Expected: 200)
+
+
+≡ƒÅù∩╕Å  PHASE 3: PROJECTS CRUD
+==========================================
+
+≡ƒº¬ Testing: List Projects
+   GET /projects
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Create Project
+   POST /projects
+   Γ£à Status: 201 (Expected: 201)
+   ≡ƒô¥ Created Project ID: 6
+
+≡ƒº¬ Testing: Show Project #6
+   GET /projects/6
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Update Project #6
+   PUT /projects/6
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Update Project Specifications #6
+   PUT /projects/6/specifications
+   Γ¥î Status: 404 (Expected: 200)
+   Response: {
+    "message": "The route api\/v1\/projects\/6\/specifications could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\AbstractRouteCollection.php",
+    "line": 45,
+    "trace": [
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\RouteCollection.php",
+            "line": 184,
+            "function": "handleMatchedRoute",
+            "class": "Illuminate\\Routing\\AbstractRouteCollection",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 777,
+            "function": "match",
+            "class": "Illuminate\\Routing\\RouteCollection",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 764,
+            "function": "findRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 753,
+            "function": "dispatchToRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 200,
+            "function": "dispatch",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 180,
+            "function": "{closure:Illuminate\\Foundation\\Http\\Kernel::dispatchToRouter():197}",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php",
+            "line": 21,
+            "function": "{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():178}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php",
+            "line": 31,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php",
+            "line": 21,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php",
+            "line": 51,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TrimStrings",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\ValidatePostSize.php",
+            "line": 27,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\ValidatePostSize",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php",
+            "line": 109,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php",
+            "line": 74,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\HandleCors",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php",
+            "line": 58,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\TrustProxies",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks.php",
+            "line": 22,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\ValidatePathEncoding.php",
+            "line": 26,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\ValidatePathEncoding",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 137,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 175,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 144,
+            "function": "sendRequestThroughRouter",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php",
+            "line": 1220,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\public\\index.php",
+            "line": 20,
+            "function": "handleRequest",
+            "class": "Illuminate\\Foundation\\Application",
+            "type": "->"
+        },
+        {
+            "file": "D:\\Margadarsi Portal\\Backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php",
+            "line": 23,
+            "function": "require_once"
+        }
+    ]
+}
+
+≡ƒº¬ Testing: Soft Delete Project #6
+   DELETE /projects/6
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Restore Project #6
+   POST /projects/6/restore
+   Γ£à Status: 200 (Expected: 200)
+
+
+≡ƒæÑ PHASE 4: ROLES CRUD
+==========================================
+
+≡ƒº¬ Testing: List Roles
+   GET /roles
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Create Custom Role
+   POST /roles
+   Γ£à Status: 201 (Expected: 201)
+   ≡ƒô¥ Created Role ID: 9
+
+≡ƒº¬ Testing: Show Role #9
+   GET /roles/9
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Update Role #9
+   PUT /roles/9
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Soft Delete Role #9
+   DELETE /roles/9
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Restore Role #9
+   POST /roles/9/restore
+   Γ£à Status: 200 (Expected: 200)
+
+
+≡ƒæñ PHASE 5: USERS CRUD
+==========================================
+
+≡ƒº¬ Testing: List Users
+   GET /users
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Create User
+   POST /users
+   Γ£à Status: 201 (Expected: 201)
+   ≡ƒô¥ Created User ID: 9
+
+≡ƒº¬ Testing: Show User #9
+   GET /users/9
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Update User #9
+   PUT /users/9
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Assign User #9 to Projects
+   POST /users/9/projects
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: List User #9 Projects
+   GET /users/9/projects
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Soft Delete User #9
+   DELETE /users/9
+   Γ£à Status: 200 (Expected: 200)
+
+≡ƒº¬ Testing: Restore User #9
+   POST /users/9/restore
+   Γ£à Status: 200 (Expected: 200)
+
+
+≡ƒöÆ PHASE 6: RBAC PERMISSION TESTS
+==========================================
+
+≡ƒº¬ Testing: Login as Sales Manager
+   POST /auth/login
+   Γ£à Status: 200 (Expected: 200)
+   ≡ƒöæ Sales Manager Token obtained
+   ≡ƒöÉ Permissions: 12 permissions
+
+≡ƒº¬ Testing: Sales Manager tries to Create Company (should fail)
+   POST /companies
+   Γ£à Status: 403 (Expected: 403)
+
+≡ƒº¬ Testing: Sales Manager tries to Create Project (should succeed)
+   POST /projects
+   Γ£à Status: 201 (Expected: 201)
+
+
+≡ƒÜ¬ PHASE 7: LOGOUT
+==========================================
+
+≡ƒº¬ Testing: Logout
+   POST /auth/logout
+   Γ£à Status: 200 (Expected: 200)
+
+
+================================================
+   Γ£à API TESTING COMPLETED
+================================================
+

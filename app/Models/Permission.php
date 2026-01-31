@@ -19,6 +19,7 @@ class Permission extends Model
 
     /**
      * Permission definitions grouped by module.
+     * Maintains backward compatibility with existing routes while adding new blueprint permissions.
      */
     public const PERMISSIONS = [
         'companies' => [
@@ -55,6 +56,129 @@ class Permission extends Model
             ['name' => 'users.restore', 'display_name' => 'Restore Users', 'description' => 'Can restore deleted users'],
             ['name' => 'users.force-delete', 'display_name' => 'Permanently Delete Users', 'description' => 'Can permanently delete users'],
             ['name' => 'users.assign-projects', 'display_name' => 'Assign Users to Projects', 'description' => 'Can assign users to projects'],
+        ],
+        'teams' => [
+            ['name' => 'teams.view', 'display_name' => 'View Teams', 'description' => 'Can view teams'],
+            ['name' => 'teams.create', 'display_name' => 'Create Teams', 'description' => 'Can create new teams'],
+            ['name' => 'teams.update', 'display_name' => 'Update Teams', 'description' => 'Can update teams'],
+            ['name' => 'teams.manage-members', 'display_name' => 'Manage Team Members', 'description' => 'Can add/remove team members'],
+        ],
+        'leads' => [
+            ['name' => 'leads.view', 'display_name' => 'View Own Leads', 'description' => 'Can view own assigned leads'],
+            ['name' => 'leads.view-all', 'display_name' => 'View All Leads', 'description' => 'Can view all leads in company'],
+            ['name' => 'leads.view-team', 'display_name' => 'View Team Leads', 'description' => 'Can view leads assigned to team'],
+            ['name' => 'leads.create', 'display_name' => 'Create Leads', 'description' => 'Can create new leads'],
+            ['name' => 'leads.update', 'display_name' => 'Update Leads', 'description' => 'Can update leads'],
+            ['name' => 'leads.delete', 'display_name' => 'Delete Leads', 'description' => 'Can delete leads'],
+            ['name' => 'leads.reassign', 'display_name' => 'Reassign Leads', 'description' => 'Can reassign leads to other users'],
+            ['name' => 'leads.handover', 'display_name' => 'Handover Leads', 'description' => 'Can handover leads between teams'],
+            ['name' => 'leads.log-call', 'display_name' => 'Log Calls', 'description' => 'Can log call activities for leads'],
+            ['name' => 'leads.qualify', 'display_name' => 'Qualify Leads', 'description' => 'Can mark leads as qualified'],
+            ['name' => 'leads.disqualify', 'display_name' => 'Disqualify Leads', 'description' => 'Can mark leads as not qualified'],
+        ],
+        'incentives' => [
+            ['name' => 'incentives.view', 'display_name' => 'View Own Incentives', 'description' => 'Can view own incentives'],
+            ['name' => 'incentives.view-all', 'display_name' => 'View All Incentives', 'description' => 'Can view all incentives'],
+            ['name' => 'incentives.approve', 'display_name' => 'Approve Incentives', 'description' => 'Can approve incentive requests'],
+            ['name' => 'incentives.reject', 'display_name' => 'Reject Incentives', 'description' => 'Can reject incentive requests'],
+        ],
+        'reports' => [
+            ['name' => 'reports.own', 'display_name' => 'View Own Reports', 'description' => 'Can view own performance reports'],
+            ['name' => 'reports.team', 'display_name' => 'View Team Reports', 'description' => 'Can view team performance reports'],
+            ['name' => 'reports.project', 'display_name' => 'View Project Reports', 'description' => 'Can view project-level reports'],
+            ['name' => 'reports.company', 'display_name' => 'View Company Reports', 'description' => 'Can view company-wide reports'],
+        ],
+        'settings' => [
+            ['name' => 'settings.view', 'display_name' => 'View Settings', 'description' => 'Can view application settings'],
+            ['name' => 'settings.update', 'display_name' => 'Update Settings', 'description' => 'Can modify application settings'],
+        ],
+    ];
+
+    /**
+     * Role-Permission Matrix based on blueprint.
+     * Maps role slugs to their assigned permissions.
+     * Permissions marked with * in blueprint have limited scope (handled at runtime).
+     */
+    public const ROLE_PERMISSION_MATRIX = [
+        'super_admin' => [
+            // Full access - all permissions
+            'companies.view', 'companies.create', 'companies.update', 'companies.delete', 'companies.restore', 'companies.force-delete',
+            'projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.restore', 'projects.force-delete', 'projects.manage-specifications',
+            'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.restore', 'roles.force-delete', 'roles.seed',
+            'users.view', 'users.create', 'users.update', 'users.delete', 'users.restore', 'users.force-delete', 'users.assign-projects',
+            'teams.view', 'teams.create', 'teams.update', 'teams.manage-members',
+            'leads.view', 'leads.view-all', 'leads.view-team', 'leads.create', 'leads.update', 'leads.delete', 'leads.reassign', 'leads.handover', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'incentives.view', 'incentives.view-all', 'incentives.approve', 'incentives.reject',
+            'reports.own', 'reports.team', 'reports.project', 'reports.company',
+            'settings.view', 'settings.update',
+        ],
+        'admin' => [
+            'companies.view', 'companies.create', 'companies.update', 'companies.delete', 'companies.restore',
+            'projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.restore', 'projects.manage-specifications',
+            'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.restore', 'roles.seed',
+            'users.view', 'users.create', 'users.update', 'users.delete', 'users.restore', 'users.assign-projects',
+            'teams.view', 'teams.create', 'teams.update', 'teams.manage-members',
+            'leads.view', 'leads.view-all', 'leads.view-team', 'leads.create', 'leads.update', 'leads.delete', 'leads.reassign', 'leads.handover', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'incentives.view', 'incentives.view-all', 'incentives.approve', 'incentives.reject',
+            'reports.own', 'reports.team', 'reports.project', 'reports.company',
+            'settings.view',
+        ],
+        'sales_director' => [
+            'companies.view',
+            'projects.view',
+            'roles.view',
+            'users.view', 'users.create', 'users.update', 'users.delete', 'users.assign-projects',
+            'teams.view', 'teams.create', 'teams.update', 'teams.manage-members',
+            'leads.view', 'leads.view-all', 'leads.view-team', 'leads.create', 'leads.update', 'leads.delete', 'leads.reassign', 'leads.handover', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'incentives.view', 'incentives.view-all', 'incentives.approve', 'incentives.reject',
+            'reports.own', 'reports.team', 'reports.project', 'reports.company',
+        ],
+        'sales_manager' => [
+            // Limited scope: only assigned projects/teams
+            'companies.view',
+            'projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.restore', 'projects.manage-specifications',
+            'roles.view',
+            'users.view', 'users.create', 'users.update', 'users.assign-projects',
+            'teams.view', 'teams.update', 'teams.manage-members',
+            'leads.view', 'leads.view-team', 'leads.create', 'leads.update', 'leads.delete', 'leads.reassign', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'incentives.view', 'incentives.view-all', 'incentives.approve', 'incentives.reject',
+            'reports.own', 'reports.team',
+        ],
+        'project_manager' => [
+            // Limited scope: only assigned projects
+            'companies.view',
+            'projects.view', 'projects.update', 'projects.manage-specifications',
+            'roles.view',
+            'users.view',
+            'teams.view', 'teams.update', 'teams.manage-members',
+            'leads.view', 'leads.view-team', 'leads.create', 'leads.update', 'leads.delete', 'leads.reassign', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'reports.own', 'reports.team',
+        ],
+        'team_lead' => [
+            // Limited scope: only assigned projects/teams
+            'companies.view',
+            'projects.view',
+            'roles.view',
+            'users.view',
+            'leads.view', 'leads.view-team', 'leads.create', 'leads.update', 'leads.reassign', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'reports.own', 'reports.team',
+        ],
+        'telecaller' => [
+            // Limited scope: only own leads
+            'companies.view',
+            'projects.view',
+            'roles.view',
+            'users.view',
+            'leads.view', 'leads.create', 'leads.update', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'incentives.view',
+            'reports.own',
+        ],
+        'channel_partner' => [
+            // Limited scope: only own leads, separate portal
+            'projects.view',
+            'leads.view', 'leads.create',
+            'incentives.view',
+            'reports.own',
         ],
     ];
 

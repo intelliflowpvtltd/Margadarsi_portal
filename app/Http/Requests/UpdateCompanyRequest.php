@@ -28,8 +28,8 @@ class UpdateCompanyRequest extends FormRequest
             'legal_name' => 'nullable|string|max:255',
             'tagline' => 'nullable|string|max:500',
             'description' => 'nullable|string',
-            'logo' => 'nullable|string|max:255',
-            'favicon' => 'nullable|string|max:255',
+            'logo' => 'nullable|file|image|max:2048', // Accept image files up to 2MB
+            'favicon' => 'nullable|file|image|max:1024', // Accept image files up to 1MB
 
             // Registration (India-specific)
             'pan_number' => 'nullable|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/',

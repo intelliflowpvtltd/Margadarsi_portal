@@ -21,9 +21,14 @@ class User extends Authenticatable
         'first_name',
         'last_name',
         'email',
+        'employee_code',
+        'designation',
+        'department',
+        'reports_to',
         'password',
         'phone',
         'avatar',
+        'profile_photo',
         'is_active',
         'last_login_at',
     ];
@@ -64,7 +69,17 @@ class User extends Authenticatable
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class, 'user_projects')
-            ->withPivot('assigned_at', 'assigned_by')
+            ->using(UserProject::class)
+            ->withPivot([
+                'access_level',
+                'is_available_for_leads',
+                'max_active_leads',
+                'current_active_leads',
+                'assignment_weight',
+                'last_lead_assigned_at',
+                'assigned_at',
+                'assigned_by'
+            ])
             ->withTimestamps();
     }
 
@@ -75,6 +90,53 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Project::class, 'user_projects', 'assigned_by', 'project_id')
             ->withPivot('user_id', 'assigned_at');
+    }
+
+    /**
+     * Get the manager this user reports to.
+     */
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reports_to');
+    }
+
+    /**
+     * Get all direct reports (users who report to this user).
+     */
+    public function directReports()
+    {
+        return $this->hasMany(User::class, 'reports_to');
+    }
+
+    /**
+     * Get all subordinates recursively (direct reports and their reports).
+     */
+    public function getAllSubordinates(): \Illuminate\Support\Collection
+    {
+        $subordinates = collect();
+        
+        foreach ($this->directReports as $report) {
+            $subordinates->push($report);
+            $subordinates = $subordinates->merge($report->getAllSubordinates());
+        }
+        
+        return $subordinates;
+    }
+
+    /**
+     * Get all managers up the chain.
+     */
+    public function getReportingChain(): \Illuminate\Support\Collection
+    {
+        $chain = collect();
+        $current = $this->manager;
+        
+        while ($current) {
+            $chain->push($current);
+            $current = $current->manager;
+        }
+        
+        return $chain;
     }
 
     // ==================== ACCESSORS ====================
@@ -189,5 +251,131 @@ class User extends Authenticatable
     public function getAccessibleProjectIds(): array
     {
         return $this->projects()->pluck('projects.id')->toArray();
+    }
+
+    // ==================== LEAD RELATIONSHIPS ====================
+
+    /**
+     * Get leads assigned to this user.
+     */
+    public function assignedLeads()
+    {
+        return $this->hasMany(Lead::class, 'current_assignee_id');
+    }
+
+    /**
+     * Get leads owned by this user (original owner for incentives).
+     */
+    public function ownedLeads()
+    {
+        return $this->hasMany(Lead::class, 'original_owner_id');
+    }
+
+    /**
+     * Get teams this user belongs to.
+     */
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'team_members')
+            ->withPivot(['team_role', 'is_available', 'current_active_leads'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get team memberships with full details.
+     */
+    public function teamMemberships()
+    {
+        return $this->hasMany(TeamMember::class);
+    }
+
+    /**
+     * Get teams where user is team lead.
+     */
+    public function ledTeams()
+    {
+        return $this->hasMany(Team::class, 'team_lead_id');
+    }
+
+    // ==================== ROLE-BASED ACCESS METHODS ====================
+
+    /**
+     * Check if user has admin-level access (Super Admin, Admin, Sales Director).
+     */
+    public function hasCompanyWideAccess(): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+        return $this->role->hierarchy_level <= 3; // Super Admin, Admin, Sales Director
+    }
+
+    /**
+     * Check if user is a manager (can see team/project data).
+     */
+    public function isManager(): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+        return $this->role->hierarchy_level <= 6; // Up to Team Lead
+    }
+
+    /**
+     * Check if user is a Team Lead.
+     */
+    public function isTeamLead(): bool
+    {
+        return $this->role?->slug === 'team_lead';
+    }
+
+    /**
+     * Check if user is a Project Manager.
+     */
+    public function isProjectManager(): bool
+    {
+        return $this->role?->slug === 'project_manager';
+    }
+
+    /**
+     * Check if user is a Sales Manager.
+     */
+    public function isSalesManager(): bool
+    {
+        return $this->role?->slug === 'sales_manager';
+    }
+
+    /**
+     * Check if user is a Telecaller.
+     */
+    public function isTelecaller(): bool
+    {
+        return $this->role?->slug === 'telecaller';
+    }
+
+    /**
+     * Check if user is a Channel Partner.
+     */
+    public function isChannelPartner(): bool
+    {
+        return $this->role?->slug === 'channel_partner';
+    }
+
+    /**
+     * Get team IDs where user is a member or lead.
+     */
+    public function getAccessibleTeamIds(): array
+    {
+        $teamIds = $this->teams()->pluck('teams.id')->toArray();
+        $ledTeamIds = $this->ledTeams()->pluck('id')->toArray();
+        return array_unique(array_merge($teamIds, $ledTeamIds));
+    }
+
+    /**
+     * Get all subordinate user IDs (for managers).
+     */
+    public function getSubordinateIds(): array
+    {
+        return $this->getAllSubordinates()->pluck('id')->toArray();
     }
 }

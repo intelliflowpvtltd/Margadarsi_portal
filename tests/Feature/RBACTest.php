@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class RBACTest extends TestCase
@@ -47,13 +48,13 @@ class RBACTest extends TestCase
     private function createSystemRoles(): array
     {
         $roleData = [
-            'super-admin' => ['name' => 'Super Admin', 'hierarchy_level' => 1],
+            'super_admin' => ['name' => 'Super Admin', 'hierarchy_level' => 1],
             'admin' => ['name' => 'Admin', 'hierarchy_level' => 2],
-            'sales-manager' => ['name' => 'Sales Manager', 'hierarchy_level' => 3],
-            'senior-sales-executive' => ['name' => 'Senior Sales Executive', 'hierarchy_level' => 4],
-            'sales-executive' => ['name' => 'Sales Executive', 'hierarchy_level' => 5],
-            'team-leader' => ['name' => 'Team Leader', 'hierarchy_level' => 6],
-            'tele-caller' => ['name' => 'Tele Caller', 'hierarchy_level' => 7],
+            'sales_director' => ['name' => 'Sales Director', 'hierarchy_level' => 3],
+            'sales_manager' => ['name' => 'Sales Manager', 'hierarchy_level' => 4],
+            'project_manager' => ['name' => 'Project Manager', 'hierarchy_level' => 5],
+            'team_lead' => ['name' => 'Team Lead', 'hierarchy_level' => 6],
+            'telecaller' => ['name' => 'Telecaller', 'hierarchy_level' => 7],
         ];
 
         $roles = [];
@@ -75,47 +76,33 @@ class RBACTest extends TestCase
         $permissions = Permission::all()->keyBy('name');
 
         // Super Admin - ALL
-        $this->roles['super-admin']->permissions()->sync($permissions->pluck('id'));
+        $this->roles['super_admin']->permissions()->sync($permissions->pluck('id'));
 
         // Admin - All except force-delete
         $adminPerms = $permissions->reject(fn($p) => str_ends_with($p->name, '.force-delete'));
         $this->roles['admin']->permissions()->sync($adminPerms->pluck('id'));
 
+        // Sales Director
+        $salesDirectorPerms = Permission::ROLE_PERMISSION_MATRIX['sales_director'] ?? [];
+        $this->roles['sales_director']->permissions()->sync(
+            $permissions->whereIn('name', $salesDirectorPerms)->pluck('id')
+        );
+
         // Sales Manager
-        $salesManagerPerms = [
-            'companies.view',
-            'projects.view',
-            'projects.create',
-            'projects.update',
-            'projects.delete',
-            'projects.restore',
-            'projects.manage-specifications',
-            'roles.view',
-            'users.view',
-            'users.create',
-            'users.update',
-            'users.assign-projects',
-        ];
-        $this->roles['sales-manager']->permissions()->sync(
+        $salesManagerPerms = Permission::ROLE_PERMISSION_MATRIX['sales_manager'] ?? [];
+        $this->roles['sales_manager']->permissions()->sync(
             $permissions->whereIn('name', $salesManagerPerms)->pluck('id')
         );
 
-        // Senior Sales Executive
-        $srSalesPerms = [
-            'companies.view',
-            'projects.view',
-            'projects.update',
-            'projects.manage-specifications',
-            'roles.view',
-            'users.view',
-        ];
-        $this->roles['senior-sales-executive']->permissions()->sync(
-            $permissions->whereIn('name', $srSalesPerms)->pluck('id')
+        // Project Manager
+        $projectManagerPerms = Permission::ROLE_PERMISSION_MATRIX['project_manager'] ?? [];
+        $this->roles['project_manager']->permissions()->sync(
+            $permissions->whereIn('name', $projectManagerPerms)->pluck('id')
         );
 
-        // Sales Executive, Team Leader, Tele Caller - View only
+        // Team Lead & Telecaller - View only
         $viewOnlyPerms = ['companies.view', 'projects.view', 'roles.view', 'users.view'];
-        foreach (['sales-executive', 'team-leader', 'tele-caller'] as $slug) {
+        foreach (['team_lead', 'telecaller'] as $slug) {
             $this->roles[$slug]->permissions()->sync(
                 $permissions->whereIn('name', $viewOnlyPerms)->pluck('id')
             );
@@ -140,6 +127,9 @@ class RBACTest extends TestCase
 
     public function test_all_users_can_login(): void
     {
+        // Disable throttle for this test since we're making multiple login attempts
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+
         foreach ($this->users as $slug => $user) {
             $response = $this->postJson('/api/v1/auth/login', [
                 'email' => $user->email,
@@ -155,12 +145,12 @@ class RBACTest extends TestCase
     public function test_super_admin_has_all_permissions(): void
     {
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => $this->users['super-admin']->email,
+            'email' => $this->users['super_admin']->email,
             'password' => 'password',
         ]);
 
         $permissions = $response->json('permissions');
-        $this->assertCount(25, $permissions);
+        $this->assertCount(49, $permissions);
         $this->assertContains('companies.force-delete', $permissions);
     }
 
@@ -172,7 +162,7 @@ class RBACTest extends TestCase
         ]);
 
         $permissions = $response->json('permissions');
-        $this->assertCount(23, $permissions);
+        $this->assertCount(45, $permissions);
         $this->assertNotContains('companies.force-delete', $permissions);
         $this->assertNotContains('projects.force-delete', $permissions);
     }
@@ -180,12 +170,12 @@ class RBACTest extends TestCase
     public function test_sales_manager_has_project_focused_permissions(): void
     {
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => $this->users['sales-manager']->email,
+            'email' => $this->users['sales_manager']->email,
             'password' => 'password',
         ]);
 
         $permissions = $response->json('permissions');
-        $this->assertCount(12, $permissions); // Actual count from assignment
+        $this->assertCount(27, $permissions); // Based on Permission::ROLE_PERMISSION_MATRIX
         $this->assertContains('projects.create', $permissions);
         $this->assertContains('users.create', $permissions);
         $this->assertNotContains('companies.create', $permissions);
@@ -194,7 +184,7 @@ class RBACTest extends TestCase
     public function test_tele_caller_has_view_only_permissions(): void
     {
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => $this->users['tele-caller']->email,
+            'email' => $this->users['telecaller']->email,
             'password' => 'password',
         ]);
 
@@ -210,7 +200,7 @@ class RBACTest extends TestCase
 
     public function test_super_admin_can_create_company(): void
     {
-        $token = $this->users['super-admin']->createToken('test')->plainTextToken;
+        $token = $this->users['super_admin']->createToken('test')->plainTextToken;
 
         $response = $this->postJson('/api/v1/companies', [
             'name' => 'Test Company',
@@ -223,7 +213,7 @@ class RBACTest extends TestCase
 
     public function test_sales_manager_cannot_create_company(): void
     {
-        $token = $this->users['sales-manager']->createToken('test')->plainTextToken;
+        $token = $this->users['sales_manager']->createToken('test')->plainTextToken;
 
         $response = $this->postJson('/api/v1/companies', [
             'name' => 'Test Company',
@@ -254,7 +244,7 @@ class RBACTest extends TestCase
     public function test_tele_caller_cannot_update_company(): void
     {
         $company = Company::factory()->create();
-        $token = $this->users['tele-caller']->createToken('test')->plainTextToken;
+        $token = $this->users['telecaller']->createToken('test')->plainTextToken;
 
         $response = $this->putJson("/api/v1/companies/{$company->id}", [
             'name' => 'Updated Name',
@@ -269,18 +259,14 @@ class RBACTest extends TestCase
         $company = Company::factory()->create();
         $company->delete(); // Soft delete first
 
-        // Admin should fail
-        $adminToken = $this->users['admin']->createToken('test')->plainTextToken;
-        $response = $this->deleteJson("/api/v1/companies/{$company->id}/force", [], [
-            'Authorization' => "Bearer {$adminToken}",
-        ]);
+        // Admin should fail - use actingAs for proper permission loading
+        Sanctum::actingAs($this->users['admin'], $this->users['admin']->getPermissions());
+        $response = $this->deleteJson("/api/v1/companies/{$company->id}/force");
         $response->assertStatus(403);
 
         // Super Admin should succeed
-        $superAdminToken = $this->users['super-admin']->createToken('test')->plainTextToken;
-        $response = $this->deleteJson("/api/v1/companies/{$company->id}/force", [], [
-            'Authorization' => "Bearer {$superAdminToken}",
-        ]);
+        Sanctum::actingAs($this->users['super_admin'], $this->users['super_admin']->getPermissions());
+        $response = $this->deleteJson("/api/v1/companies/{$company->id}/force");
         $response->assertStatus(200);
     }
 
@@ -288,7 +274,7 @@ class RBACTest extends TestCase
 
     public function test_sales_manager_can_create_project(): void
     {
-        $token = $this->users['sales-manager']->createToken('test')->plainTextToken;
+        $token = $this->users['sales_manager']->createToken('test')->plainTextToken;
 
         $response = $this->postJson('/api/v1/projects', [
             'company_id' => $this->company->id,
@@ -302,9 +288,9 @@ class RBACTest extends TestCase
         $response->assertStatus(201);
     }
 
-    public function test_senior_sales_exec_can_update_but_not_create_project(): void
+    public function test_project_manager_can_update_but_not_create_project(): void
     {
-        $token = $this->users['senior-sales-executive']->createToken('test')->plainTextToken;
+        $token = $this->users['project_manager']->createToken('test')->plainTextToken;
 
         // Cannot create
         $response = $this->postJson('/api/v1/projects', [
@@ -326,7 +312,7 @@ class RBACTest extends TestCase
 
     public function test_tele_caller_can_only_view_projects(): void
     {
-        $token = $this->users['tele-caller']->createToken('test')->plainTextToken;
+        $token = $this->users['telecaller']->createToken('test')->plainTextToken;
 
         // Can view
         $response = $this->getJson('/api/v1/projects', [
@@ -362,16 +348,16 @@ class RBACTest extends TestCase
 
     public function test_sales_manager_can_create_users(): void
     {
-        $token = $this->users['sales-manager']->createToken('test')->plainTextToken;
+        $token = $this->users['sales_manager']->createToken('test')->plainTextToken;
 
         $response = $this->postJson('/api/v1/users', [
             'company_id' => $this->company->id,
-            'role_id' => $this->roles['sales-executive']->id,
+            'role_id' => $this->roles['telecaller']->id,
             'first_name' => 'New',
             'last_name' => 'User',
             'email' => 'newuser@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ], ['Authorization' => "Bearer {$token}"]);
 
         $response->assertStatus(201);
@@ -379,16 +365,16 @@ class RBACTest extends TestCase
 
     public function test_tele_caller_cannot_create_users(): void
     {
-        $token = $this->users['tele-caller']->createToken('test')->plainTextToken;
+        $token = $this->users['telecaller']->createToken('test')->plainTextToken;
 
         $response = $this->postJson('/api/v1/users', [
             'company_id' => $this->company->id,
-            'role_id' => $this->roles['tele-caller']->id,
+            'role_id' => $this->roles['telecaller']->id,
             'first_name' => 'New',
             'last_name' => 'User',
             'email' => 'another@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ], ['Authorization' => "Bearer {$token}"]);
 
         $response->assertStatus(403)
@@ -397,8 +383,8 @@ class RBACTest extends TestCase
 
     public function test_sales_manager_can_assign_users_to_projects(): void
     {
-        $user = $this->users['sales-executive'];
-        $token = $this->users['sales-manager']->createToken('test')->plainTextToken;
+        $user = $this->users['telecaller'];
+        $token = $this->users['sales_manager']->createToken('test')->plainTextToken;
 
         $response = $this->postJson("/api/v1/users/{$user->id}/projects", [
             'project_ids' => [$this->project->id],
@@ -424,9 +410,9 @@ class RBACTest extends TestCase
         $response->assertStatus(201);
     }
 
-    public function test_sales_executive_cannot_create_roles(): void
+    public function test_telecaller_cannot_create_roles(): void
     {
-        $token = $this->users['sales-executive']->createToken('test')->plainTextToken;
+        $token = $this->users['telecaller']->createToken('test')->plainTextToken;
 
         $response = $this->postJson('/api/v1/roles', [
             'company_id' => $this->company->id,

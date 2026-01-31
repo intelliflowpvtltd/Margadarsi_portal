@@ -50,6 +50,9 @@ class RoleController extends Controller
             $query->withTrashed();
         }
 
+        // Load relationship counts
+        $query->withCount(['permissions', 'users']);
+
         // Order by hierarchy level (highest authority first)
         $query->orderByHierarchy();
 
@@ -83,7 +86,10 @@ class RoleController extends Controller
      */
     public function show(Role $role): RoleResource
     {
-        return new RoleResource($role->load('company'));
+        return new RoleResource(
+            $role->loadCount(['permissions', 'users'])
+                ->load(['company', 'permissions', 'users'])
+        );
     }
 
     /**

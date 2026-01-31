@@ -39,7 +39,13 @@ class StoreUserRequest extends FormRequest
                 // Email must be unique per company
                 Rule::unique('users', 'email')->where('company_id', $this->input('company_id')),
             ],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
+            ],
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^[0-9\s\-\+\(\)]+$/'],
             'avatar' => ['nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
@@ -63,6 +69,7 @@ class StoreUserRequest extends FormRequest
             'role_id.exists' => 'The selected role must belong to the same company.',
             'email.unique' => 'This email is already registered for this company.',
             'project_ids.*.exists' => 'One or more projects do not belong to the same company.',
+            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (@$!%*?&).',
         ];
     }
 }
