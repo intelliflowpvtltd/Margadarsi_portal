@@ -50,7 +50,7 @@
         </li>
     </ul>
 
-    <form id="companyForm">
+    <form id="companyForm" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -256,7 +256,7 @@
                 <i class="bi bi-x-circle me-2"></i>
                 Cancel
             </a>
-            <button type="submit" class="btn btn-primary" id="btnSave">
+            <button type="submit" class="btn btn-maroon" id="btnSave">
                 <i class="bi bi-check-circle me-2"></i>
                 Update Company
             </button>
@@ -274,6 +274,30 @@
         border-radius: 12px;
         padding: 2rem;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Custom Dark Maroon Button */
+    .btn-maroon {
+        background: linear-gradient(135deg, var(--color-dark-maroon), var(--color-maroon-light));
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2);
+    }
+
+    .btn-maroon:hover {
+        background: linear-gradient(135deg, #6B001B, var(--color-dark-maroon));
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
+        color: white;
+    }
+
+    .btn-maroon:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
     }
 
     /* Nav Tabs Premium */

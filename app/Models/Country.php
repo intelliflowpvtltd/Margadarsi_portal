@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\IsMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Country extends Model
 {
-    use HasFactory;
+    use HasFactory, IsMaster;
 
     protected $fillable = [
         'name',
         'code',
+        'slug',
+        'icon',
         'phone_code',
         'currency_code',
         'is_active',
@@ -21,6 +25,7 @@ class Country extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     // ==================== RELATIONSHIPS ====================
@@ -30,6 +35,11 @@ class Country extends Model
         return $this->hasMany(State::class)->orderBy('sort_order')->orderBy('name');
     }
 
+    public function cities(): HasManyThrough
+    {
+        return $this->hasManyThrough(City::class, State::class);
+    }
+
     public function holidays(): HasMany
     {
         return $this->hasMany(Holiday::class);
@@ -37,13 +47,28 @@ class Country extends Model
 
     // ==================== SCOPES ====================
 
-    public function scopeActive($query)
+    public function scopeWithStates($query)
     {
-        return $query->where('is_active', true);
+        return $query->with('states');
     }
 
-    public function scopeOrdered($query)
+    public function scopeWithCitiesCount($query)
     {
-        return $query->orderBy('sort_order')->orderBy('name');
+        return $query->withCount('cities');
+    }
+
+    // ==================== BUSINESS LOGIC ====================
+
+    public function canBeDeleted(): bool
+    {
+        // Cannot delete if it has states
+        return $this->states()->count() === 0;
+    }
+
+    // ==================== ACCESSORS ====================
+
+    public function getDisplayNameWithCodeAttribute(): string
+    {
+        return "{$this->name} ({$this->code})";
     }
 }

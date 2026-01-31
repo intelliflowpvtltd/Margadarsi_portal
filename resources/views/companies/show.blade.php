@@ -31,7 +31,7 @@
             </div>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('companies.edit', $company) }}" class="btn btn-primary">
+            <a href="{{ route('companies.edit', $company) }}" class="btn btn-maroon">
                 <i class="bi bi-pencil me-2"></i>
                 Edit Company
             </a>
@@ -313,6 +313,30 @@
         color: white;
         font-weight: 700;
         font-size: 2rem;
+    }
+
+    /* Custom Dark Maroon Button */
+    .btn-maroon {
+        background: linear-gradient(135deg, var(--color-dark-maroon), var(--color-maroon-light));
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2);
+    }
+
+    .btn-maroon:hover {
+        background: linear-gradient(135deg, #6B001B, var(--color-dark-maroon));
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
+        color: white;
+    }
+
+    .btn-maroon:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
     }
 
     /* Info Card */

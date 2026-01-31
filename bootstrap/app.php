@@ -19,8 +19,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Global middleware for all requests
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
+            'project.access' => \App\Http\Middleware\EnsureProjectAccess::class,
+            'department.access' => \App\Http\Middleware\EnsureDepartmentAccess::class,
+            'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
         $middleware->statefulApi();

@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
+use App\Traits\IsMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LeadSource extends Model
 {
-    use HasFactory;
+    use HasFactory, IsMaster;
 
     protected $fillable = [
         'company_id',
         'source_category_id',
         'name',
         'slug',
+        'icon',
+        'color_code',
         'description',
         'is_active',
         'sort_order',
@@ -23,40 +26,54 @@ class LeadSource extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            if (empty($model->slug)) {
-                $model->slug = Str::slug($model->name);
-            }
-        });
-    }
-
+    /**
+     * Get the company this source belongs to
+     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * Get the source category
+     */
     public function sourceCategory(): BelongsTo
     {
         return $this->belongsTo(SourceCategory::class);
     }
 
+    /**
+     * Get all leads from this source
+     */
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'source_id');
+    }
+
+    /**
+     * Scope: Filter by company
+     */
     public function scopeForCompany($query, $companyId)
     {
         return $query->where('company_id', $companyId);
     }
 
-    public function scopeActive($query)
+    /**
+     * Scope: Filter by category
+     */
+    public function scopeInCategory($query, $categoryId)
     {
-        return $query->where('is_active', true);
+        return $query->where('source_category_id', $categoryId);
     }
 
-    public function scopeOrdered($query)
+    /**
+     * Check if this lead source can be deleted
+     */
+    public function canBeDeleted(): bool
     {
-        return $query->orderBy('sort_order')->orderBy('name');
+        return $this->leads()->count() === 0;
     }
 }

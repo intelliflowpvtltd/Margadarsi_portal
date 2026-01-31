@@ -18,7 +18,7 @@
             </h1>
             <p class="text-muted mb-0">Manage your company information and settings</p>
         </div>
-        <button class="btn btn-primary" id="btnAddCompany">
+        <button class="btn btn-maroon" id="btnAddCompany">
             <i class="bi bi-plus-circle me-2"></i>
             Add Company
         </button>
@@ -146,7 +146,7 @@
                     </li>
                 </ul>
 
-                <form id="companyForm">
+                <form id="companyForm" enctype="multipart/form-data">
                     <input type="hidden" id="companyId" name="id">
 
                     <div class="tab-content">
@@ -338,7 +338,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="btnSaveCompany">
+                <button type="button" class="btn btn-maroon" id="btnSaveCompany">
                     <i class="bi bi-check-circle me-2"></i>
                     <span id="btnSaveText">Save Company</span>
                 </button>
@@ -358,6 +358,30 @@
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Custom Dark Maroon Button */
+    .btn-maroon {
+        background: linear-gradient(135deg, var(--color-dark-maroon), var(--color-maroon-light));
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2);
+    }
+
+    .btn-maroon:hover {
+        background: linear-gradient(135deg, #6B001B, var(--color-dark-maroon));
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
+        color: white;
+    }
+
+    .btn-maroon:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
     }
 
     .filter-card {
@@ -809,12 +833,8 @@
         const formData = new FormData(form);
         const companyId = document.getElementById('companyId').value;
 
-        const data = {};
-        formData.forEach((value, key) => {
-            if (key !== 'logo' && key !== 'favicon') {
-                data[key] = value;
-            }
-        });
+
+        // FormData now includes all fields including files
 
         try {
             const url = companyId ? `${API_BASE_URL}/${companyId}` : API_BASE_URL;
@@ -823,13 +843,12 @@
             const response = await fetch(url, {
                 method: method,
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify(data)
+                body: formData  // Send FormData directly, browser sets Content-Type automatically
             });
 
             if (!response.ok) {
@@ -871,10 +890,10 @@
             document.getElementById('companyId').value = company.id;
             document.getElementById('btnSaveText').textContent = 'Update Company';
 
-            // Fill all fields
+            // Fill all fields except file inputs (can't set file input values programmatically)
             Object.keys(company).forEach(key => {
                 const input = document.querySelector(`[name="${key}"]`);
-                if (input && company[key] !== null) {
+                if (input && company[key] !== null && input.type !== 'file') {
                     input.value = company[key];
                 }
             });

@@ -13,14 +13,18 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
+            
+            // Relationships - roles can belong to company (global) or department (project-specific)
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
+            $table->foreignId('project_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('department_id')->nullable()->constrained()->onDelete('cascade');
 
             $table->string('name', 100);
             $table->string('slug', 100);
             $table->text('description')->nullable();
 
             // Hierarchy: lower number = higher authority
-            // 1 = Super Admin, 2 = Admin, 3 = Sales Manager, etc.
+            // 1 = Super Admin, 2 = Company Admin, 3 = Project Manager, 4 = Sr. Sales Exec/Team Lead, 5 = Sales Exec/Telecaller
             $table->unsignedTinyInteger('hierarchy_level')->default(99);
 
             // System roles cannot be deleted
@@ -30,11 +34,13 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            // Unique constraint: no duplicate slugs within same company
-            $table->unique(['company_id', 'slug']);
+            // Unique constraint: no duplicate slugs within same department
+            $table->unique(['department_id', 'slug']);
 
             // Indexes
             $table->index('company_id');
+            $table->index('project_id');
+            $table->index('department_id');
             $table->index('hierarchy_level');
             $table->index('is_active');
         });

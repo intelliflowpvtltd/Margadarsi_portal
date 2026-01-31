@@ -10,73 +10,77 @@
 
 <!-- Error Messages -->
 @if ($errors->any())
-<div class="alert alert-danger">
-    <i class="bi bi-exclamation-circle me-2"></i>
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-circle me-2" aria-hidden="true"></i>
     {{ $errors->first() }}
 </div>
 @endif
 
 <!-- Reset Password Form -->
-<form method="POST" action="{{ route('password.update') }}" class="auth-form">
+<form method="POST" action="{{ route('password.update') }}" class="auth-form" novalidate>
     @csrf
 
-    <input type="hidden" name="token" value="{{ $token ?? session('reset_token') }}">
+    <input type="hidden" name="reset_token" value="{{ $token ?? session('reset_token') }}">
     <input type="hidden" name="email" value="{{ $email ?? session('email') }}">
 
     <!-- New Password Field -->
     <div class="form-group">
         <label for="password" class="form-label">New Password</label>
-        <div class="input-icon">
-            <i class="bi bi-lock"></i>
+        <div class="input-icon password-wrapper">
+            <i class="bi bi-lock" aria-hidden="true"></i>
             <input type="password"
-                class="form-control"
+                class="form-control @error('password') is-invalid @enderror"
                 id="password"
                 name="password"
                 placeholder="Enter new password"
+                autocomplete="new-password"
+                aria-label="New password"
+                minlength="8"
+                maxlength="128"
                 required
                 autofocus>
+            <button type="button" 
+                class="password-toggle" 
+                onclick="togglePassword('password', this)"
+                aria-label="Toggle password visibility">
+                <i class="bi bi-eye"></i>
+            </button>
         </div>
-        <small class="text-muted">Minimum 8 characters required</small>
+        <small class="text-muted">At least 8 characters with uppercase, lowercase, number & symbol</small>
     </div>
 
     <!-- Confirm Password Field -->
     <div class="form-group">
         <label for="password_confirmation" class="form-label">Confirm Password</label>
-        <div class="input-icon">
-            <i class="bi bi-lock-fill"></i>
+        <div class="input-icon password-wrapper">
+            <i class="bi bi-lock-fill" aria-hidden="true"></i>
             <input type="password"
                 class="form-control"
                 id="password_confirmation"
                 name="password_confirmation"
                 placeholder="Re-enter new password"
+                autocomplete="new-password"
+                aria-label="Confirm new password"
                 required>
-        </div>
-    </div>
-
-    <!-- Password Strength Indicator -->
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <small class="text-muted">Password Strength:</small>
-            <small id="strength-text" class="fw-medium">-</small>
-        </div>
-        <div class="progress" style="height: 6px; border-radius: 3px;">
-            <div id="strength-bar"
-                class="progress-bar"
-                role="progressbar"
-                style="width: 0%; transition: all 0.3s ease;"></div>
+            <button type="button" 
+                class="password-toggle" 
+                onclick="togglePassword('password_confirmation', this)"
+                aria-label="Toggle password confirmation visibility">
+                <i class="bi bi-eye"></i>
+            </button>
         </div>
     </div>
 
     <!-- Reset Password Button -->
-    <button type="submit" class="btn btn-primary mb-3">
-        <i class="bi bi-shield-check"></i>
-        Reset Password
+    <button type="submit" class="btn btn-primary mb-3" id="reset-btn">
+        <i class="bi bi-shield-check" aria-hidden="true"></i>
+        <span class="btn-text">Reset Password</span>
     </button>
 
     <!-- Back to Login Link -->
     <div class="text-center">
         <a href="{{ route('login') }}" class="auth-link">
-            <i class="bi bi-arrow-left me-1"></i>
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
             Back to Login
         </a>
     </div>
@@ -88,71 +92,103 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    /* Compact card padding for reset password */
+    .auth-login-card {
+        padding: 0.5rem 2rem !important;  /* Reduced vertical padding */
+    }
+    
+    .password-wrapper {
+        position: relative;
+    }
+    
+    /* Password toggle button - properly positioned inside input */
+    .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: 0.5rem;
+        transition: color 0.2s ease;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2rem;
+        width: 2rem;
+    }
+    
+    .password-toggle:hover {
+        color: var(--color-coffee-gold);
+    }
+    
+    .password-toggle:focus {
+        outline: 2px solid var(--color-coffee-gold);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+    
+    .password-toggle i {
+        font-size: 1.125rem;
+        line-height: 1;
+    }
+    
+    /* Ensure password input has enough padding for both icon and toggle */
+    .password-wrapper .form-control {
+        padding-right: 3rem !important;
+    }
+    
+    /* Keep the left padding from .input-icon */
+    .password-wrapper.input-icon .form-control {
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+    }
+    
+    /* Compact spacing for reset password */
+    .auth-form .form-group {
+        margin-bottom: 0.875rem;
+    }
+    
+    .auth-form .form-group small {
+        display: block;
+        margin-top: 0.25rem;
+   }
+</style>
+@endpush
+
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const passwordInput = document.getElementById('password');
-        const confirmInput = document.getElementById('password_confirmation');
-        const strengthBar = document.getElementById('strength-bar');
-        const strengthText = document.getElementById('strength-text');
         const form = document.querySelector('.auth-form');
+        const resetBtn = document.getElementById('reset-btn');
 
-        // Password strength checker
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            let strength = 0;
-
-            if (password.length >= 8) strength += 25;
-            if (password.length >= 12) strength += 25;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
-            if (/[0-9]/.test(password)) strength += 15;
-            if (/[^a-zA-Z0-9]/.test(password)) strength += 10;
-
-            strengthBar.style.width = strength + '%';
-
-            if (strength < 30) {
-                strengthBar.className = 'progress-bar bg-danger';
-                strengthText.textContent = 'Weak';
-                strengthText.style.color = '#EF4444';
-            } else if (strength < 60) {
-                strengthBar.className = 'progress-bar bg-warning';
-                strengthText.textContent = 'Fair';
-                strengthText.style.color = '#F59E0B';
-            } else if (strength < 90) {
-                strengthBar.className = 'progress-bar';
-                strengthBar.style.backgroundColor = 'var(--color-coffee-gold)';
-                strengthText.textContent = 'Good';
-                strengthText.style.color = 'var(--color-coffee-gold-dark)';
-            } else {
-                strengthBar.className = 'progress-bar bg-success';
-                strengthText.textContent = 'Strong';
-                strengthText.style.color = '#10B981';
-            }
-        });
-
-        // Password match validation
-        confirmInput.addEventListener('input', function() {
-            if (this.value && this.value !== passwordInput.value) {
-                this.setCustomValidity('Passwords do not match');
-                this.classList.add('is-invalid');
-            } else {
-                this.setCustomValidity('');
-                this.classList.remove('is-invalid');
-            }
-        });
-
-        // Form submission
+        // Form submission with loading state
         form.addEventListener('submit', function(e) {
-            if (confirmInput.value !== passwordInput.value) {
-                e.preventDefault();
-                confirmInput.classList.add('is-invalid');
-                return false;
-            }
-
-            const button = form.querySelector('button[type="submit"]');
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resetting...';
-            button.disabled = true;
+            const btnText = resetBtn.querySelector('.btn-text');
+            resetBtn.disabled = true;
+            btnText.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Resetting...';
         });
     });
+
+    // Password visibility toggle
+    function togglePassword(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+            button.setAttribute('aria-label', 'Hide password');
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+            button.setAttribute('aria-label', 'Show password');
+        }
+    }
 </script>
 @endpush

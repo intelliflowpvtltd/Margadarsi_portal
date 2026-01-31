@@ -18,7 +18,7 @@
             </h1>
             <p class="text-muted mb-0">Manage your real estate projects and developments</p>
         </div>
-        <a href="{{ route('projects.create') }}" class="btn btn-primary">
+        <a href="{{ route('projects.create') }}" class="btn btn-maroon">
             <i class="bi bi-plus-circle me-2"></i>
             Add Project
         </a>
@@ -105,7 +105,7 @@
         </div>
         <h4 class="mt-3">No Projects Found</h4>
         <p class="text-muted">Start by adding your first project</p>
-        <a href="{{ route('projects.create') }}" class="btn btn-primary mt-3">
+        <a href="{{ route('projects.create') }}" class="btn btn-maroon mt-3">
             <i class="bi bi-plus-circle me-2"></i>
             Add Project
         </a>
@@ -454,6 +454,30 @@
 
     .text-gold {
         color: var(--color-coffee-gold);
+    }
+
+    /* Custom Dark Maroon Button */
+    .btn-maroon {
+        background: linear-gradient(135deg, var(--color-dark-maroon), var(--color-maroon-light));
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2);
+    }
+
+    .btn-maroon:hover {
+        background: linear-gradient(135deg, #6B001B, var(--color-dark-maroon));
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
+        color: white;
+    }
+
+    .btn-maroon:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
     }
 </style>
 @endpush

@@ -30,6 +30,8 @@ class MasterDataSeeder extends Seeder
             ['code' => 'IND'],
             [
                 'name' => 'India',
+                'slug' => 'india',
+                'icon' => '🇮🇳',
                 'phone_code' => '+91',
                 'currency_code' => 'INR',
                 'is_active' => true,
@@ -66,12 +68,18 @@ class MasterDataSeeder extends Seeder
             ['name' => 'Goa', 'code' => 'GA', 'cities' => ['Panaji', 'Margao', 'Vasco da Gama', 'Mapusa', 'Ponda']],
         ];
 
+        // Define metro and tier 1 cities
+        $metroCities = ['Mumbai', 'Delhi', 'New Delhi', 'Bengaluru', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune'];
+        $tier1Cities = ['Ahmedabad', 'Surat', 'Jaipur', 'Lucknow', 'Kanpur', 'Nagpur', 'Visakhapatnam', 'Indore', 'Thane', 'Bhopal', 'Coimbatore', 'Kochi', 'Patna', 'Vadodara'];
+        $tier2Cities = ['Guwahati', 'Chandigarh', 'Mysuru', 'Rajkot', 'Nashik', 'Vijayawada', 'Ghaziabad', 'Ludhiana', 'Agra', 'Madurai', 'Jabalpur', 'Kota', 'Raipur', 'Jodhpur'];
+
         $sortOrder = 1;
         foreach ($states as $stateData) {
             $state = State::firstOrCreate(
                 ['country_id' => $india->id, 'name' => $stateData['name']],
                 [
                     'code' => $stateData['code'],
+                    'slug' => \Str::slug($stateData['name']),
                     'is_active' => true,
                     'sort_order' => $sortOrder++,
                 ]
@@ -79,9 +87,18 @@ class MasterDataSeeder extends Seeder
 
             $citySortOrder = 1;
             foreach ($stateData['cities'] as $cityName) {
+                $isMetro = in_array($cityName, $metroCities);
+                $isTier1 = in_array($cityName, $tier1Cities);
+                $isTier2 = in_array($cityName, $tier2Cities);
+                $isTier3 = !$isMetro && !$isTier1 && !$isTier2;
+
                 City::firstOrCreate(
                     ['state_id' => $state->id, 'name' => $cityName],
                     [
+                        'is_metro' => $isMetro,
+                        'is_tier1' => $isTier1,
+                        'is_tier2' => $isTier2,
+                        'is_tier3' => $isTier3,
                         'is_active' => true,
                         'sort_order' => $citySortOrder++,
                     ]
@@ -93,14 +110,14 @@ class MasterDataSeeder extends Seeder
     private function seedPropertyTypes(): void
     {
         $types = [
-            ['name' => 'Apartment', 'slug' => 'apartment', 'description' => 'Multi-story residential building units'],
-            ['name' => 'Villa', 'slug' => 'villa', 'description' => 'Independent luxury houses'],
-            ['name' => 'Plot', 'slug' => 'plot', 'description' => 'Open land for construction'],
-            ['name' => 'Commercial', 'slug' => 'commercial', 'description' => 'Office spaces and commercial properties'],
-            ['name' => 'Penthouse', 'slug' => 'penthouse', 'description' => 'Top floor luxury apartments'],
-            ['name' => 'Duplex', 'slug' => 'duplex', 'description' => 'Two-floor residential units'],
-            ['name' => 'Row House', 'slug' => 'row-house', 'description' => 'Connected independent houses'],
-            ['name' => 'Farmhouse', 'slug' => 'farmhouse', 'description' => 'Rural residential properties with land'],
+            ['name' => 'Apartment', 'slug' => 'apartment', 'icon' => 'bi-building', 'color_code' => '#3498db', 'description' => 'Multi-story residential building units'],
+            ['name' => 'Villa', 'slug' => 'villa', 'icon' => 'bi-house-door', 'color_code' => '#e74c3c', 'description' => 'Independent luxury houses'],
+            ['name' => 'Plot', 'slug' => 'plot', 'icon' => 'bi-grid-3x3', 'color_code' => '#2ecc71', 'description' => 'Open land for construction'],
+            ['name' => 'Commercial', 'slug' => 'commercial', 'icon' => 'bi-shop', 'color_code' => '#f39c12', 'description' => 'Office spaces and commercial properties'],
+            ['name' => 'Penthouse', 'slug' => 'penthouse', 'icon' => 'bi-gem', 'color_code' => '#9b59b6', 'description' => 'Top floor luxury apartments'],
+            ['name' => 'Duplex', 'slug' => 'duplex', 'icon' => 'bi-layers', 'color_code' => '#1abc9c', 'description' => 'Two-floor residential units'],
+            ['name' => 'Row House', 'slug' => 'row-house', 'icon' => 'bi-houses', 'color_code' => '#e67e22', 'description' => 'Connected independent houses'],
+            ['name' => 'Farmhouse', 'slug' => 'farmhouse', 'icon' => 'bi-tree', 'color_code' => '#27ae60', 'description' => 'Rural residential properties with land'],
         ];
 
         $sortOrder = 1;

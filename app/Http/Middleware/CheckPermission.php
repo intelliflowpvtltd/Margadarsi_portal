@@ -17,17 +17,25 @@ class CheckPermission
     {
         // Check if user is authenticated
         if (!auth()->check()) {
-            return response()->json([
-                'message' => 'Unauthenticated.',
-            ], 401);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+            return redirect()->route('login');
         }
 
         // Check if user has the required permission
         if (!auth()->user()->hasPermission($permission)) {
-            return response()->json([
-                'message' => 'Unauthorized.',
-                'required_permission' => $permission,
-            ], 403);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Unauthorized.',
+                    'required_permission' => $permission,
+                ], 403);
+            }
+            
+            // For web requests, redirect back with error
+            return redirect()->back()->with('error', 'You do not have permission to access this resource.');
         }
 
         return $next($request);

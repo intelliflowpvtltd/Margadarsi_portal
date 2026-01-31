@@ -18,9 +18,11 @@ class User extends Authenticatable
     protected $fillable = [
         'company_id',
         'role_id',
+        'department_id',
         'first_name',
         'last_name',
         'email',
+        'email_verified_at',
         'employee_code',
         'designation',
         'department',
@@ -61,6 +63,14 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Get the department this user belongs to.
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
     }
 
     /**
@@ -214,23 +224,74 @@ class User extends Authenticatable
         });
     }
 
+    /**
+     * Scope to filter by department.
+     */
+    public function scopeInDepartment($query, int $departmentId)
+    {
+        return $query->where('department_id', $departmentId);
+    }
+
+    /**
+     * Scope to filter users in a specific project's departments.
+     */
+    public function scopeInProjectDepartments($query, int $projectId)
+    {
+        return $query->whereHas('department', function ($q) use ($projectId) {
+            $q->where('project_id', $projectId);
+        });
+    }
+
+    /**
+     * Scope to filter by department type (management, sales, pre_sales).
+     */
+    public function scopeInDepartmentType($query, string $departmentType)
+    {
+        return $query->whereHas('department', function ($q) use ($departmentType) {
+            $q->where('slug', $departmentType);
+        });
+    }
+
     // ==================== METHODS ====================
 
     /**
      * Check if user has access to a specific project.
+     * Company-wide users (Super Admin, Admin, Sales Director) can access all company projects.
      */
     public function hasProjectAccess(int $projectId): bool
     {
+        // Company-wide access users can access any project in their company
+        if ($this->hasCompanyWideAccess()) {
+            return \App\Models\Project::where('id', $projectId)
+                ->where('company_id', $this->company_id)
+                ->exists();
+        }
+
         return $this->projects()->where('projects.id', $projectId)->exists();
+    }
+
+    /**
+     * Check if user has any project assignment.
+     * Company-wide users don't require explicit project assignment.
+     */
+    public function hasAnyProjectAssignment(): bool
+    {
+        // Company-wide users don't need explicit project assignment
+        if ($this->hasCompanyWideAccess()) {
+            return true;
+        }
+
+        return $this->projects()->exists();
     }
 
     /**
      * Assign user to a project.
      */
-    public function assignToProject(int $projectId, ?int $assignedBy = null): void
+    public function assignToProject(int $projectId, ?int $assignedBy = null, string $accessLevel = 'member'): void
     {
         $this->projects()->syncWithoutDetaching([
             $projectId => [
+                'access_level' => $accessLevel,
                 'assigned_at' => now(),
                 'assigned_by' => $assignedBy,
             ],
@@ -247,9 +308,17 @@ class User extends Authenticatable
 
     /**
      * Get accessible project IDs.
+     * For company-wide users, returns all company projects.
      */
     public function getAccessibleProjectIds(): array
     {
+        // Company-wide access users can access all company projects
+        if ($this->hasCompanyWideAccess()) {
+            return \App\Models\Project::where('company_id', $this->company_id)
+                ->pluck('id')
+                ->toArray();
+        }
+
         return $this->projects()->pluck('projects.id')->toArray();
     }
 
@@ -377,5 +446,84 @@ class User extends Authenticatable
     public function getSubordinateIds(): array
     {
         return $this->getAllSubordinates()->pluck('id')->toArray();
+    }
+
+    // ==================== DEPARTMENT METHODS ====================
+
+    /**
+     * Check if user belongs to a specific department type.
+     */
+    public function isInDepartmentType(string $departmentType): bool
+    {
+        return $this->department?->slug === $departmentType;
+    }
+
+    /**
+     * Check if user is in management department.
+     */
+    public function isInManagement(): bool
+    {
+        return $this->isInDepartmentType('management');
+    }
+
+    /**
+     * Check if user is in sales department.
+     */
+    public function isInSales(): bool
+    {
+        return $this->isInDepartmentType('sales');
+    }
+
+    /**
+     * Check if user is in pre-sales department.
+     */
+    public function isInPreSales(): bool
+    {
+        return $this->isInDepartmentType('pre_sales');
+    }
+
+    /**
+     * Get the project the user's department belongs to.
+     */
+    public function getDepartmentProject(): ?Project
+    {
+        return $this->department?->project;
+    }
+
+    /**
+     * Get all projects accessible through user's department.
+     * For company-wide users (management), returns all company projects.
+     * For others, returns only their department's project.
+     */
+    public function getDepartmentProjects(): array
+    {
+        if ($this->hasCompanyWideAccess()) {
+            return Project::where('company_id', $this->company_id)->pluck('id')->toArray();
+        }
+
+        $departmentProject = $this->getDepartmentProject();
+        return $departmentProject ? [$departmentProject->id] : [];
+    }
+
+    /**
+     * Check if user has access to a specific department.
+     */
+    public function hasDepartmentAccess(int $departmentId): bool
+    {
+        // Own department
+        if ($this->department_id === $departmentId) {
+            return true;
+        }
+
+        // Company-wide users can access all departments in their company
+        if ($this->hasCompanyWideAccess()) {
+            return Department::where('id', $departmentId)
+                ->whereHas('project', function ($q) {
+                    $q->where('company_id', $this->company_id);
+                })
+                ->exists();
+        }
+
+        return false;
     }
 }

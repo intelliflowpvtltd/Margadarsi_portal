@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\IsMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
 class SourceCategory extends Model
 {
-    use HasFactory;
+    use HasFactory, IsMaster;
 
     protected $fillable = [
         'name',
         'slug',
+        'icon',
         'description',
         'is_active',
         'sort_order',
@@ -21,31 +22,22 @@ class SourceCategory extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->slug)) {
-                $model->slug = Str::slug($model->name);
-            }
-        });
-    }
-
+    /**
+     * Get all lead sources in this category
+     */
     public function leadSources(): HasMany
     {
-        return $this->hasMany(LeadSource::class);
+        return $this->hasMany(LeadSource::class, 'source_category_id');
     }
 
-    public function scopeActive($query)
+    /**
+     * Check if this category can be deleted
+     */
+    public function canBeDeleted(): bool
     {
-        return $query->where('is_active', true);
-    }
-
-    public function scopeOrdered($query)
-    {
-        return $query->orderBy('sort_order')->orderBy('name');
+        return $this->leadSources()->count() === 0;
     }
 }

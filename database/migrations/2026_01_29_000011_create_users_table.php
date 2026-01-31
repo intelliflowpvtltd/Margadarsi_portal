@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
 
-            // Company and Role relationships
+            // Company, Role, and Department relationships
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->foreignId('role_id')->constrained()->onDelete('restrict');
+            $table->foreignId('department_id')->nullable()->constrained()->onDelete('set null');
 
             // Personal Information
             $table->string('first_name', 100);
@@ -43,6 +44,7 @@ return new class extends Migration
             // Indexes
             $table->unique(['company_id', 'email']); // Email unique per company
             $table->index('role_id');
+            $table->index('department_id');
             $table->index('is_active');
             $table->index('email');
         });

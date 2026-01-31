@@ -108,6 +108,14 @@ class Project extends Model
     }
 
     /**
+     * Get all departments for the project.
+     */
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class);
+    }
+
+    /**
      * Get all images for the project.
      */
     public function images(): HasMany
@@ -312,5 +320,47 @@ class Project extends Model
     public function scopeInCity($query, string $city)
     {
         return $query->where('city', $city);
+    }
+
+    // ==================== DEPARTMENT METHODS ====================
+
+    /**
+     * Get a specific department by type.
+     */
+    public function getDepartment(string $departmentType): ?Department
+    {
+        return $this->departments()->where('slug', $departmentType)->first();
+    }
+
+    /**
+     * Get management department.
+     */
+    public function getManagementDepartment(): ?Department
+    {
+        return $this->getDepartment('management');
+    }
+
+    /**
+     * Get sales department.
+     */
+    public function getSalesDepartment(): ?Department
+    {
+        return $this->getDepartment('sales');
+    }
+
+    /**
+     * Get pre-sales department.
+     */
+    public function getPreSalesDepartment(): ?Department
+    {
+        return $this->getDepartment('pre_sales');
+    }
+
+    /**
+     * Scope to eager load departments.
+     */
+    public function scopeWithDepartments($query)
+    {
+        return $query->with('departments');
     }
 }

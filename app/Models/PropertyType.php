@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\IsMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PropertyType extends Model
 {
-    use HasFactory;
+    use HasFactory, IsMaster;
 
     protected $fillable = [
         'name',
         'slug',
+        'icon',
+        'color_code',
         'description',
         'is_active',
         'sort_order',
@@ -20,26 +23,32 @@ class PropertyType extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
-    protected static function boot()
+    /**
+     * Get all property statuses for this type
+     */
+    public function propertyStatuses(): HasMany
     {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->slug)) {
-                $model->slug = Str::slug($model->name);
-            }
-        });
+        return $this->hasMany(PropertyStatus::class, 'property_type_id');
     }
 
-    public function scopeActive($query)
+    /**
+     * Get all projects of this type
+     */
+    public function projects(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(Project::class, 'type_id');
     }
 
-    public function scopeOrdered($query)
+    /**
+     * Check if this property type can be deleted
+     */
+    public function canBeDeleted(): bool
     {
-        return $query->orderBy('sort_order')->orderBy('name');
+        // Cannot delete if it has projects or property statuses
+        return $this->projects()->count() === 0 
+            && $this->propertyStatuses()->count() === 0;
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -79,7 +80,7 @@ class UserSeeder extends Seeder
     {
         $roles = [];
         foreach (Role::SYSTEM_ROLES as $roleData) {
-            $roles[$roleData['slug']] = Role::firstOrCreate(
+            $roles[$roleData['slug']] = Role::updateOrCreate(
                 [
                     'company_id' => $company->id,
                     'slug' => $roleData['slug'],
@@ -124,9 +125,9 @@ class UserSeeder extends Seeder
         $usersData = [
             [
                 'role' => 'super_admin',
-                'first_name' => 'Super',
-                'last_name' => 'Admin',
-                'email' => 'superadmin@margadarsi.com',
+                'first_name' => 'Ashish Kr.',
+                'last_name' => 'Yadav',
+                'email' => 'intelliflowpvtltd@gmail.com',
                 'phone' => '9876543210',
                 'employee_code' => 'EMP001',
                 'designation' => 'System Administrator',
@@ -221,12 +222,14 @@ class UserSeeder extends Seeder
             $reportsToSlug = $userData['reports_to'];
             unset($userData['role'], $userData['reports_to']);
 
-            $users[$roleSlug] = User::firstOrCreate(
-                ['email' => $userData['email']],
-                array_merge($userData, [
+            $users[$roleSlug] = User::updateOrCreate(
+                [
                     'company_id' => $company->id,
+                    'email' => $userData['email']
+                ],
+                array_merge($userData, [
                     'role_id' => $roles[$roleSlug]->id,
-                    'password' => 'password123',
+                    'password' => $roleSlug === 'super_admin' ? Hash::make('Ashish@7890') : Hash::make('password123'),
                     'is_active' => true,
                     'email_verified_at' => now(),
                 ])
@@ -255,12 +258,12 @@ class UserSeeder extends Seeder
     private function createProjectsAndAssignUsers(Company $company, array $users): void
     {
         // Create 3 sample projects
-        $project1 = Project::firstOrCreate(
+        $project1 = Project::updateOrCreate(
             [
-                'company_id' => $company->id,
                 'slug' => 'margadarsi-heights',
             ],
             [
+                'company_id' => $company->id,
                 'name' => 'Margadarsi Heights',
                 'type' => 'residential',
                 'status' => 'ongoing',
@@ -273,12 +276,12 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $project2 = Project::firstOrCreate(
+        $project2 = Project::updateOrCreate(
             [
-                'company_id' => $company->id,
                 'slug' => 'margadarsi-tech-park',
             ],
             [
+                'company_id' => $company->id,
                 'name' => 'Margadarsi Tech Park',
                 'type' => 'commercial',
                 'status' => 'upcoming',
@@ -291,12 +294,12 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $project3 = Project::firstOrCreate(
+        $project3 = Project::updateOrCreate(
             [
-                'company_id' => $company->id,
                 'slug' => 'margadarsi-villas',
             ],
             [
+                'company_id' => $company->id,
                 'name' => 'Margadarsi Villas',
                 'type' => 'villa',
                 'status' => 'completed',
@@ -362,7 +365,7 @@ class UserSeeder extends Seeder
         $this->command->table(
             ['Role', 'Email', 'Password', 'Projects'],
             [
-                ['Super Admin', 'superadmin@margadarsi.com', 'password123', '3 (All)'],
+                ['Super Admin', 'intelliflowpvtltd@gmail.com', 'Ashish@7890', '3 (All)'],
                 ['Admin', 'admin@margadarsi.com', 'password123', '3 (All)'],
                 ['Sales Director', 'vikram.singh@margadarsi.com', 'password123', '3 (All)'],
                 ['Sales Manager', 'rajesh.kumar@margadarsi.com', 'password123', '2 (Heights, Tech Park)'],

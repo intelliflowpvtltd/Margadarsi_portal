@@ -159,7 +159,7 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonFragment(['message' => 'OTP sent to your email address. Please check your inbox.']);
+            ->assertJsonFragment(['message' => 'If an account exists with this email, an OTP has been sent.']);
 
         Mail::assertSent(\App\Mail\OtpMail::class);
 
@@ -175,7 +175,8 @@ class AuthTest extends TestCase
         DB::table('password_reset_tokens')->insert([
             'email' => 'test@example.com',
             'token' => Hash::make($otp),
-            'otp' => $otp,
+            'otp' => null,
+            'otp_attempts' => 0,
             'expires_at' => now()->addMinutes(10),
             'created_at' => now(),
         ]);
@@ -195,7 +196,8 @@ class AuthTest extends TestCase
         DB::table('password_reset_tokens')->insert([
             'email' => 'test@example.com',
             'token' => Hash::make($otp),
-            'otp' => $otp,
+            'otp' => null,
+            'otp_attempts' => 0,
             'expires_at' => now()->subMinutes(1), // Expired
             'created_at' => now()->subMinutes(15),
         ]);
@@ -214,7 +216,8 @@ class AuthTest extends TestCase
         DB::table('password_reset_tokens')->insert([
             'email' => 'test@example.com',
             'token' => Hash::make('123456'),
-            'otp' => '123456',
+            'otp' => null,
+            'otp_attempts' => 0,
             'expires_at' => now()->addMinutes(10),
             'created_at' => now(),
         ]);
@@ -230,19 +233,23 @@ class AuthTest extends TestCase
 
     public function test_can_reset_password_with_valid_token(): void
     {
-        $resetToken = 'valid-reset-token';
+        // Reset token must be exactly 64 characters
+        $resetToken = str_repeat('a', 64);
         DB::table('password_reset_tokens')->insert([
             'email' => 'test@example.com',
             'token' => Hash::make($resetToken),
             'otp' => null,
+            'otp_attempts' => 0,
             'expires_at' => now()->addHour(),
             'created_at' => now(),
         ]);
 
+        // Password must meet complexity requirements: uppercase, lowercase, number, symbol
         $response = $this->postJson('/api/v1/auth/reset-password', [
+            'email' => 'test@example.com',
             'reset_token' => $resetToken,
-            'password' => 'newpassword123',
-            'password_confirmation' => 'newpassword123',
+            'password' => 'NewPassword123!',
+            'password_confirmation' => 'NewPassword123!',
         ]);
 
         $response->assertStatus(200)
@@ -250,7 +257,7 @@ class AuthTest extends TestCase
 
         // Verify password changed
         $this->user->refresh();
-        $this->assertTrue(Hash::check('newpassword123', $this->user->password));
+        $this->assertTrue(Hash::check('NewPassword123!', $this->user->password));
 
         // Token should be deleted
         $this->assertDatabaseMissing('password_reset_tokens', [

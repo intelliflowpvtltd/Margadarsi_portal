@@ -5,120 +5,163 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
-use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
-    /**
-     * Maximum login attempts before lockout.
-     */
-    private const MAX_ATTEMPTS = 5;
+    protected AuthService $authService;
 
-    /**
-     * Lockout duration in minutes.
-     */
-    private const LOCKOUT_MINUTES = 15;
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
 
     /**
      * Login user and create token.
+     * 
+     * Security features:
+     * - Dual rate limiting (email + IP based)
+     * - Account lockout after 5 failed attempts
+     * - Login activity logging
+     * - Session metadata tracking
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $email = $request->email;
-        $lockoutKey = 'login_lockout_' . md5($email);
-        $attemptsKey = 'login_attempts_' . md5($email);
+        $email = strtolower(trim($request->email));
+        $ip = $request->ip();
 
-        // Check if account is locked out
-        if (Cache::has($lockoutKey)) {
-            $remainingMinutes = ceil(Cache::get($lockoutKey) - time()) / 60;
-            Log::warning('Login attempt on locked account', ['email' => $email, 'ip' => $request->ip()]);
+        // Check if account is locked out (email or IP)
+        if ($this->authService->isLockedOut($email, $ip)) {
+            $remainingMinutes = $this->authService->getRemainingLockoutMinutes($email, $ip);
             return response()->json([
-                'message' => 'Too many failed attempts. Account locked for ' . ceil($remainingMinutes) . ' minutes.',
+                'success' => false,
+                'message' => "Too many failed attempts. Please try again in {$remainingMinutes} minute(s).",
+                'error' => 'account_locked',
+                'retry_after' => $remainingMinutes * 60,
             ], 429);
         }
 
-        $user = User::where('email', $email)->first();
+        // Validate credentials
+        $user = $this->authService->validateCredentials($email, $request->password);
 
-        // Validate password
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            // Increment failed attempts
-            $attempts = Cache::get($attemptsKey, 0) + 1;
-            Cache::put($attemptsKey, $attempts, now()->addMinutes(self::LOCKOUT_MINUTES));
+        if (!$user) {
+            $result = $this->authService->recordFailedAttempt($email, $ip);
 
-            // Lock account if max attempts reached
-            if ($attempts >= self::MAX_ATTEMPTS) {
-                Cache::put($lockoutKey, time() + (self::LOCKOUT_MINUTES * 60), now()->addMinutes(self::LOCKOUT_MINUTES));
-                Cache::forget($attemptsKey);
-                Log::warning('Account locked due to failed attempts', ['email' => $email, 'ip' => $request->ip()]);
+            if ($result['locked']) {
                 return response()->json([
-                    'message' => 'Too many failed attempts. Account locked for ' . self::LOCKOUT_MINUTES . ' minutes.',
+                    'success' => false,
+                    'message' => 'Too many failed attempts. Account locked for ' . AuthService::LOCKOUT_MINUTES . ' minutes.',
+                    'error' => 'account_locked',
+                    'retry_after' => AuthService::LOCKOUT_MINUTES * 60,
                 ], 429);
             }
 
-            Log::info('Failed login attempt', ['email' => $email, 'attempts' => $attempts, 'ip' => $request->ip()]);
+            $remaining = AuthService::MAX_ATTEMPTS - $result['attempts'];
             return response()->json([
+                'success' => false,
                 'message' => 'Invalid credentials.',
-                'attempts_remaining' => self::MAX_ATTEMPTS - $attempts,
+                'error' => 'invalid_credentials',
+                'attempts_remaining' => max(0, $remaining),
             ], 401);
         }
 
-        // Check if user is active
-        if (!$user->is_active) {
+        // Check if user can login (active, not deleted)
+        $canLogin = $this->authService->canUserLogin($user);
+        if (!$canLogin['allowed']) {
             return response()->json([
-                'message' => 'Your account has been deactivated. Please contact administrator.',
-            ], 403);
+                'success' => false,
+                'message' => $canLogin['reason'],
+                'error' => 'account_inactive',
+            ], $canLogin['code']);
         }
 
         // Clear failed attempts on successful login
-        Cache::forget($attemptsKey);
-        Cache::forget($lockoutKey);
+        $this->authService->clearFailedAttempts($email, $ip);
 
-        // Update last login
-        $user->update(['last_login_at' => now()]);
+        // Record successful login
+        $this->authService->recordSuccessfulLogin($user, $request);
 
         // Load relationships
         $user->load(['company', 'role.permissions', 'projects']);
 
         // Get all permissions through role
-        $permissions = $user->role->permissions->pluck('name')->toArray();
+        $permissions = $user->role?->permissions?->pluck('name')->toArray() ?? [];
 
         // Create token with permissions as abilities
         $token = $user->createToken('auth-token', $permissions)->plainTextToken;
 
-        Log::info('Successful login', ['user_id' => $user->id, 'email' => $email, 'ip' => $request->ip()]);
-
         return response()->json([
+            'success' => true,
             'message' => 'Login successful.',
             'token' => $token,
+            'token_type' => 'Bearer',
+            'expires_in' => config('sanctum.expiration') * 60, // seconds
             'user' => new UserResource($user),
             'permissions' => $permissions,
         ]);
     }
 
     /**
-     * Logout user (revoke token).
+     * Logout user (revoke current token).
      */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
+            'success' => true,
             'message' => 'Logged out successfully.',
         ]);
     }
 
     /**
-     * Get authenticated user.
+     * Logout from all devices (revoke all tokens).
      */
-    public function me(Request $request): UserResource
+    public function logoutAll(Request $request): JsonResponse
     {
-        return new UserResource(
-            $request->user()->load(['company', 'role.permissions', 'projects'])
-        );
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out from all devices successfully.',
+        ]);
+    }
+
+    /**
+     * Get authenticated user details.
+     */
+    public function me(Request $request): JsonResponse
+    {
+        $user = $request->user()->load(['company', 'role.permissions', 'projects']);
+
+        return response()->json([
+            'success' => true,
+            'data' => new UserResource($user),
+        ]);
+    }
+
+    /**
+     * Refresh token (create new token and revoke current).
+     */
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $permissions = $user->role?->permissions?->pluck('name')->toArray() ?? [];
+
+        // Delete current token
+        $request->user()->currentAccessToken()->delete();
+
+        // Create new token
+        $token = $user->createToken('auth-token', $permissions)->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Token refreshed successfully.',
+            'token' => $token,
+            'token_type' => 'Bearer',
+            'expires_in' => config('sanctum.expiration') * 60,
+        ]);
     }
 }

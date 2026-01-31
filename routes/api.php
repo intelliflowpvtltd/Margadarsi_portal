@@ -35,6 +35,8 @@ Route::prefix('v1')->group(function () {
     // Support both Sanctum tokens (for external APIs) and web sessions (for Blade frontend)
     Route::middleware('auth:sanctum,web')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
+        Route::post('auth/logout-all', [AuthController::class, 'logoutAll']);
+        Route::post('auth/refresh', [AuthController::class, 'refresh']);
         Route::get('auth/me', [AuthController::class, 'me']);
 
         // ==================== COMPANY ROUTES ====================

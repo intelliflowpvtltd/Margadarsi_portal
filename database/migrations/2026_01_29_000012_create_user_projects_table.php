@@ -16,6 +16,7 @@ return new class extends Migration
 
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
+            $table->foreignId('department_id')->nullable()->constrained()->onDelete('set null');
 
             // Track assignment details
             $table->timestamp('assigned_at')->useCurrent();
@@ -23,12 +24,13 @@ return new class extends Migration
 
             $table->timestamps();
 
-            // Unique constraint: user can only be assigned to a project once
-            $table->unique(['user_id', 'project_id']);
+            // Unique constraint: user can only be assigned to a project+department combination once
+            $table->unique(['user_id', 'project_id', 'department_id']);
 
             // Indexes for faster lookups
             $table->index('user_id');
             $table->index('project_id');
+            $table->index('department_id');
             $table->index('assigned_by');
         });
     }

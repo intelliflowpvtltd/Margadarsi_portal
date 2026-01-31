@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\IsMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,19 +10,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class State extends Model
 {
-    use HasFactory;
+    use HasFactory, IsMaster;
 
     protected $fillable = [
         'country_id',
         'name',
         'code',
+        'slug',
         'is_active',
         'sort_order',
     ];
 
     protected $casts = [
+        'country_id' => 'integer',
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
+
+    // ==================== RELATIONSHIPS ====================
 
     public function country(): BelongsTo
     {
@@ -38,13 +44,30 @@ class State extends Model
         return $this->hasMany(Holiday::class);
     }
 
-    public function scopeActive($query)
+    // ==================== SCOPES ====================
+
+    public function scopeInCountry($query, int $countryId)
     {
-        return $query->where('is_active', true);
+        return $query->where('country_id', $countryId);
     }
 
-    public function scopeOrdered($query)
+    public function scopeWithCitiesCount($query)
     {
-        return $query->orderBy('sort_order')->orderBy('name');
+        return $query->withCount('cities');
+    }
+
+    // ==================== BUSINESS LOGIC ====================
+
+    public function canBeDeleted(): bool
+    {
+        // Cannot delete if it has cities
+        return $this->cities()->count() === 0;
+    }
+
+    // ==================== ACCESSORS ====================
+
+    public function getFullNameAttribute(): string
+    {
+        return $this->country ? "{$this->name}, {$this->country->name}" : $this->name;
     }
 }

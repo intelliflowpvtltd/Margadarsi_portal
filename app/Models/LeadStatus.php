@@ -2,62 +2,107 @@
 
 namespace App\Models;
 
+use App\Traits\IsMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LeadStatus extends Model
 {
-    use HasFactory;
+    use HasFactory, IsMaster;
 
     protected $fillable = [
         'company_id',
         'name',
         'slug',
-        'color',
-        'is_final',
+        'color_code',
+        'badge_class',
+        'workflow_order',
+        'is_pipeline_state',
+        'is_final_state',
+        'description',
         'is_active',
         'sort_order',
     ];
 
     protected $casts = [
-        'is_final' => 'boolean',
+        'is_pipeline_state' => 'boolean',
+        'is_final_state' => 'boolean',
         'is_active' => 'boolean',
+        'workflow_order' => 'integer',
+        'sort_order' => 'integer',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            if (empty($model->slug)) {
-                $model->slug = Str::slug($model->name);
-            }
-        });
-    }
-
+    /**
+     * Get the company this status belongs to
+     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * Get all leads with this status
+     */
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'status_id');
+    }
+
+    /**
+     * Scope: Filter by company
+     */
     public function scopeForCompany($query, $companyId)
     {
         return $query->where('company_id', $companyId);
     }
 
-    public function scopeActive($query)
+    /**
+     * Scope: Get pipeline statuses only
+     */
+    public function scopePipeline($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('is_pipeline_state', true);
     }
 
+    /**
+     * Scope: Get final statuses only
+     */
     public function scopeFinal($query)
     {
-        return $query->where('is_final', true);
+        return $query->where('is_final_state', true);
     }
 
-    public function scopeOrdered($query)
+    /**
+     * Scope: Order by workflow
+     */
+    public function scopeWorkflowOrder($query)
     {
-        return $query->orderBy('sort_order')->orderBy('name');
+        return $query->orderBy('workflow_order')->orderBy('name');
+    }
+
+    /**
+     * Check if this lead status can be deleted
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this->leads()->count() === 0;
+    }
+
+    /**
+     * Check if this is a pipeline status
+     */
+    public function isPipeline(): bool
+    {
+        return $this->is_pipeline_state === true;
+    }
+
+    /**
+     * Check if this is a final status
+     */
+    public function isFinal(): bool
+    {
+        return $this->is_final_state === true;
     }
 }
