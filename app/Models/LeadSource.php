@@ -50,7 +50,7 @@ class LeadSource extends Model
      */
     public function leads(): HasMany
     {
-        return $this->hasMany(Lead::class, 'source_id');
+        return $this->hasMany(Lead::class, 'lead_source_id');
     }
 
     /**

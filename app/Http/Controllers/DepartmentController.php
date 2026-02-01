@@ -6,94 +6,122 @@ use App\Models\Department;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class DepartmentController extends Controller
 {
     /**
-     * Display departments for a project.
+     * Display departments index page.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): View
     {
-        $query = Department::with(['project', 'roles', 'users']);
+        // Return Blade view for web requests
+        return view('departments.index');
+    }
 
-        // Filter by project
-        if ($request->has('project_id')) {
-            $query->where('project_id', $request->project_id);
-        }
+    /**
+     * Show create department form.
+     */
+    public function create(): View
+    {
+        return view('departments.create');
+    }
 
-        // Filter by status
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
+    /**
+     * Show a specific department.
+     */
+    public function show(int $id): View
+    {
+        $department = Department::findOrFail($id);
+        return view('departments.show', compact('department'));
+    }
 
-        // Search
-        if ($request->has('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'ilike', "%{$request->search}%")
-                    ->orWhere('description', 'ilike', "%{$request->search}%");
-            });
-        }
-
-        $departments = $query->orderBy('name')->get();
-
-        // Add counts
-        $departments->each(function ($dept) {
-            $dept->roles_count = $dept->roles()->count();
-            $dept->users_count = $dept->users()->count();
-        });
-
-        return response()->json([
-            'data' => $departments,
-        ]);
+    /**
+     * Show edit department form.
+     */
+    public function edit(int $id): View
+    {
+        $department = Department::findOrFail($id);
+        return view('departments.edit', compact('department'));
     }
 
     /**
      * Store a newly created department.
+     * 
+     * Management departments are company-level (no project_id required).
+     * Sales, Pre-Sales, External departments are project-level (project_id required).
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
+        $slug = $request->input('slug');
+        $isCompanyLevel = in_array($slug, Department::COMPANY_LEVEL_DEPARTMENTS);
+        
+        // Validation rules depend on department type
+        $rules = [
             'name' => 'required|string|max:100',
             'slug' => 'required|string|max:100',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
-        ]);
-
-        // Check if department slug already exists for this project
-        $exists = Department::where('project_id', $validated['project_id'])
-            ->where('slug', $validated['slug'])
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'message' => 'A department with this slug already exists for this project.',
-                'errors' => ['slug' => ['Department slug must be unique within the project.']],
-            ], 422);
+        ];
+        
+        if ($isCompanyLevel) {
+            $rules['company_id'] = 'required|exists:companies,id';
+            $rules['project_id'] = 'nullable';
+        } else {
+            $rules['project_id'] = 'required|exists:projects,id';
+            $rules['company_id'] = 'nullable|exists:companies,id';
+        }
+        
+        $validated = $request->validate($rules);
+        
+        // Check uniqueness based on department level
+        if ($isCompanyLevel) {
+            $exists = Department::where('company_id', $validated['company_id'] ?? null)
+                ->whereNull('project_id')
+                ->where('slug', $validated['slug'])
+                ->exists();
+            
+            if ($exists) {
+                return response()->json([
+                    'message' => 'A department with this slug already exists for this company.',
+                    'errors' => ['slug' => ['Department slug must be unique within the company.']],
+                ], 422);
+            }
+            
+            $validated['project_id'] = null;
+            
+            if (empty($validated['company_id']) && !empty($request->input('project_id'))) {
+                $project = Project::find($request->input('project_id'));
+                if ($project) {
+                    $validated['company_id'] = $project->company_id;
+                }
+            }
+        } else {
+            $exists = Department::where('project_id', $validated['project_id'])
+                ->where('slug', $validated['slug'])
+                ->exists();
+            
+            if ($exists) {
+                return response()->json([
+                    'message' => 'A department with this slug already exists for this project.',
+                    'errors' => ['slug' => ['Department slug must be unique within the project.']],
+                ], 422);
+            }
+            
+            if (empty($validated['company_id'])) {
+                $project = Project::find($validated['project_id']);
+                if ($project) {
+                    $validated['company_id'] = $project->company_id;
+                }
+            }
         }
 
         $department = Department::create($validated);
 
         return response()->json([
             'message' => 'Department created successfully.',
-            'data' => $department->load(['project', 'roles', 'users']),
+            'data' => $department->load(['company', 'project', 'roles', 'users']),
         ], 201);
-    }
-
-    /**
-     * Display the specified department.
-     */
-    public function show(int $id): JsonResponse
-    {
-        $department = Department::with([
-            'project',
-            'roles.users',
-            'users.role',
-        ])->findOrFail($id);
-
-        return response()->json([
-            'data' => $department,
-        ]);
     }
 
     /**

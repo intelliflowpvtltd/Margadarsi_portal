@@ -12,8 +12,8 @@ trait IsMaster
     protected static function bootIsMaster()
     {
         static::creating(function ($model) {
-            // Auto-generate slug if not provided
-            if (empty($model->slug) && isset($model->name)) {
+            // Auto-generate slug if not provided AND the model has slug in fillable
+            if (in_array('slug', $model->getFillable()) && empty($model->slug) && isset($model->name)) {
                 $model->slug = Str::slug($model->name);
             }
         });
@@ -52,12 +52,18 @@ trait IsMaster
             return $query;
         }
         
-        return $query->where(function($q) use ($search) {
-            $q->where('name', 'ILIKE', "%{$search}%")
-              ->orWhere('slug', 'ILIKE', "%{$search}%");
+        $fillable = $this->fillable ?? [];
+        
+        return $query->where(function($q) use ($search, $fillable) {
+            $q->where('name', 'ILIKE', "%{$search}%");
+            
+            // Also search slug if available
+            if (in_array('slug', $fillable)) {
+                $q->orWhere('slug', 'ILIKE', "%{$search}%");
+            }
               
             // Also search description if available
-            if (in_array('description', $this->fillable ?? [])) {
+            if (in_array('description', $fillable)) {
                 $q->orWhere('description', 'ILIKE', "%{$search}%");
             }
         });

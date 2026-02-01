@@ -97,15 +97,41 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label for="color" class="form-label">
-                                Badge Color
+                            <label for="scope" class="form-label">
+                                Role Scope <span class="text-danger">*</span>
                             </label>
-                            <div class="color-picker-wrapper">
-                                <input type="color" class="form-control form-control-color"
-                                    id="color" name="color" value="#B8956A">
-                                <span class="color-preview"></span>
-                            </div>
-                            <small class="text-muted">Visual identifier for this role</small>
+                            <select class="form-control form-control-premium" id="scope" 
+                                    name="scope" required>
+                                <option value="company" selected>Company-wide</option>
+                                <option value="project">Project-specific</option>
+                                <option value="department">Department-specific</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                            <small class="text-muted">Determines where this role applies</small>
+                        </div>
+
+                        <!-- Project Selector (conditional) -->
+                        <div class="col-md-6" id="projectSelector" style="display: none;">
+                            <label for="project_id" class="form-label">
+                                Select Project <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control form-control-premium" id="project_id" name="project_id">
+                                <option value="">Choose a project...</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                            <small class="text-muted">Role limited to this project only</small>
+                        </div>
+
+                        <!-- Department Selector (conditional) -->
+                        <div class="col-md-6" id="departmentSelector" style="display: none;">
+                            <label for="department_id" class="form-label">
+                                Select Department <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control form-control-premium" id="department_id" name="department_id">
+                                <option value="">Choose a department...</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                            <small class="text-muted">Role limited to this department only</small>
                         </div>
                     </div>
 
@@ -357,17 +383,98 @@
             this.dataset.manuallyEdited = 'true';
         });
 
-        // Update color preview
-        const colorInput = document.getElementById('color');
-        const colorPreview = document.querySelector('.color-preview');
+        // Scope change handler
+        document.getElementById('scope').addEventListener('change', handleScopeChange);
 
-        colorInput.addEventListener('input', function() {
-            colorPreview.style.background = this.value;
-        });
+        // Load projects and departments
+        loadProjects();
+        loadDepartments();
 
         // Form submission
         document.getElementById('createRoleForm').addEventListener('submit', handleSubmit);
     });
+
+    // Handle scope change
+    function handleScopeChange() {
+        const scope = document.getElementById('scope').value;
+        const projectSelector = document.getElementById('projectSelector');
+        const departmentSelector = document.getElementById('departmentSelector');
+        const projectField = document.getElementById('project_id');
+        const deptField = document.getElementById('department_id');
+        
+        // Hide all first and remove required
+        projectSelector.style.display = 'none';
+        departmentSelector.style.display = 'none';
+        projectField.removeAttribute('required');
+        deptField.removeAttribute('required');
+        
+        // Show and set required based on scope
+        if (scope === 'project') {
+            projectSelector.style.display = 'block';
+            projectField.setAttribute('required', 'required');
+        } else if (scope === 'department') {
+            departmentSelector.style.display = 'block';
+            deptField.setAttribute('required', 'required');
+        }
+    }
+
+    // Load projects via AJAX
+    async function loadProjects() {
+        try {
+            const response = await fetch(`/api/v1/projects?company_id=${COMPANY_ID}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                const select = document.getElementById('project_id');
+                // Clear existing options except first
+                select.innerHTML = '<option value="">Choose a project...</option>';
+                result.data.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = project.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading projects:', error);
+        }
+    }
+
+    // Load departments via AJAX
+    async function loadDepartments() {
+        try {
+            const response = await fetch(`/api/v1/departments?company_id=${COMPANY_ID}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                const select = document.getElementById('department_id');
+                // Clear existing options except first
+                select.innerHTML = '<option value="">Choose a department...</option>';
+                result.data.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading departments:', error);
+        }
+    }
 
     // Generate slug from text
     function generateSlug(text) {
@@ -388,7 +495,17 @@
 
         // Get form data
         const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
+        const scope = formData.get('scope');
+        const data = {
+            name: formData.get('name'),
+            slug: formData.get('slug'),
+            description: formData.get('description'),
+            hierarchy_level: parseInt(formData.get('hierarchy_level')),
+            scope: scope,
+            company_id: formData.get('company_id'),
+            project_id: scope === 'project' ? parseInt(formData.get('project_id')) || null : null,
+            department_id: scope === 'department' ? parseInt(formData.get('department_id')) || null : null
+        };
 
         // Validate
         if (!validateForm(data)) {

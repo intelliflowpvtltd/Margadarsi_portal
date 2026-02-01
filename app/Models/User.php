@@ -27,6 +27,7 @@ class User extends Authenticatable
         'designation',
         'department',
         'reports_to',
+        'reporting_path',
         'password',
         'phone',
         'avatar',
@@ -46,6 +47,21 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'password' => 'hashed',
     ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Auto-update reporting_path when reports_to changes
+        static::saving(function ($user) {
+            if ($user->isDirty('reports_to')) {
+                $user->updateReportingPath();
+            }
+        });
+    }
 
     // ==================== RELATIONSHIPS ====================
 
@@ -120,17 +136,64 @@ class User extends Authenticatable
 
     /**
      * Get all subordinates recursively (direct reports and their reports).
+     * Optimized with reporting_path to avoid N+1 queries.
      */
     public function getAllSubordinates(): \Illuminate\Support\Collection
     {
-        $subordinates = collect();
-        
-        foreach ($this->directReports as $report) {
-            $subordinates->push($report);
-            $subordinates = $subordinates->merge($report->getAllSubordinates());
+        if (!$this->id) {
+            return collect();
         }
+
+        // Single query using materialized path pattern
+        // Finds all users where reporting_path contains this user's ID
+        return static::where(function ($query) {
+            $query->where('reporting_path', 'LIKE', '%/' . $this->id . '/%')
+                  ->orWhere('reporting_path', 'LIKE', $this->id . '/%')
+                  ->orWhere('reporting_path', 'LIKE', '%/' . $this->id)
+                  ->orWhere('reporting_path', '=', (string) $this->id);
+        })
+        ->orWhere('reports_to', $this->id)
+        ->get();
+    }
+
+    /**
+     * Update the materialized reporting path.
+     * Called automatically when reports_to changes.
+     */
+    public function updateReportingPath(): void
+    {
+        if ($this->reports_to) {
+            $manager = static::find($this->reports_to);
+            
+            if ($manager) {
+                // Build path: manager's path + manager's ID
+                $this->reporting_path = $manager->reporting_path 
+                    ? $manager->reporting_path . '/' . $this->reports_to
+                    : (string) $this->reports_to;
+            } else {
+                $this->reporting_path = (string) $this->reports_to;
+            }
+        } else {
+            $this->reporting_path = null;
+        }
+
+        // Update all subordinates' paths
+        if ($this->exists && $this->isDirty('reports_to')) {
+            $this->updateSubordinatesPaths();
+        }
+    }
+
+    /**
+     * Update reporting paths for all subordinates.
+     */
+    protected function updateSubordinatesPaths(): void
+    {
+        $subordinates = $this->directReports;
         
-        return $subordinates;
+        foreach ($subordinates as $subordinate) {
+            $subordinate->updateReportingPath();
+            $subordinate->saveQuietly(); // Save without triggering events
+        }
     }
 
     /**

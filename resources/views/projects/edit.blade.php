@@ -431,7 +431,7 @@
                                                     @endif
                                                 </div>
                                                 <small class="text-muted d-block">
-                                                    @if($unit->carpet_area_sqft){{ number_format($unit->carpet_area_sqft) }} sqft@endif
+                                                    @if($unit->carpet_area_sqft){{ number_format($unit->carpet_area_sqft) }} sqft @endif
                                                     @if($unit->bedrooms) | {{ $unit->bedrooms }}BHK @endif
                                                     @if($unit->facing) | {{ ucfirst($unit->facing) }} Facing @endif
                                                 </small>

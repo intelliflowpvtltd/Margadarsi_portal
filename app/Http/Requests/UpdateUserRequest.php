@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\RoleAuthorityCheck;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -30,6 +31,8 @@ class UpdateUserRequest extends FormRequest
                 'exists:roles,id',
                 // Ensure role belongs to the same company as the user
                 Rule::exists('roles', 'id')->where('company_id', $user->company_id),
+                // Ensure user can only assign roles at or below their authority level
+                new RoleAuthorityCheck(auth()->user()->role),
             ],
             'first_name' => ['sometimes', 'string', 'max:100'],
             'last_name' => ['sometimes', 'string', 'max:100'],

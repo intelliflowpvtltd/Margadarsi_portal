@@ -18,10 +18,12 @@
             </h1>
             <p class="text-muted mb-0">Manage users, roles, and project assignments</p>
         </div>
+        @can('users.create')
         <button class="btn btn-primary" id="btnAddUser">
             <i class="bi bi-person-plus me-2"></i>
             Add User
         </button>
+        @endcan
     </div>
 </div>
 
@@ -49,9 +51,7 @@
         <div class="col-md-2">
             <select class="form-select form-select-premium" id="filterDepartment">
                 <option value="">All Departments</option>
-                <option value="management">Management</option>
-                <option value="sales">Sales</option>
-                <option value="pre_sales">Pre-Sales</option>
+                <!-- Populated via JS with numeric IDs -->
             </select>
         </div>
         <div class="col-md-2">
@@ -89,8 +89,9 @@
                         <th width="60">Avatar</th>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Department</th>
                         <th>Role</th>
-                        <th>Phone</th>
+                        <th>Project</th>
                         <th width="100">Status</th>
                         <th width="120">Actions</th>
                     </tr>
@@ -141,6 +142,10 @@
                     <input type="hidden" id="userId" name="id">
 
                     <div class="row g-3">
+                        <!-- Section: Basic Info -->
+                        <div class="col-12">
+                            <h6 class="text-muted border-bottom pb-2 mb-0"><i class="bi bi-person me-2"></i>Basic Information</h6>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label">First Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="first_name" required>
@@ -158,19 +163,6 @@
                             <input type="tel" class="form-control" name="phone">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Role <span class="text-danger">*</span></label>
-                            <select class="form-select" name="role_id" id="roleSelect" required>
-                                <!-- Populated via JS -->
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Reports To</label>
-                            <select class="form-select" name="reports_to" id="managerSelect">
-                                <option value="">No Manager</option>
-                                <!-- Populated via JS -->
-                            </select>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label">Employee Code</label>
                             <input type="text" class="form-control" name="employee_code">
                         </div>
@@ -178,19 +170,68 @@
                             <label class="form-label">Designation</label>
                             <input type="text" class="form-control" name="designation">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Project</label>
+                        
+                        <!-- Section: Organization (Cascade Flow) -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-muted border-bottom pb-2 mb-0"><i class="bi bi-diagram-3 me-2"></i>Organization Assignment</h6>
+                            <small class="text-muted">Select in order: Project → Department → Role</small>
+                        </div>
+                        
+                        <!-- Step 1: Project (Optional for company-level) -->
+                        <div class="col-md-6" id="projectContainer">
+                            <label class="form-label">
+                                <span class="badge bg-secondary me-1">1</span>
+                                Project <span class="text-danger project-required" style="display: none;">*</span>
+                            </label>
                             <select class="form-select" name="project_id" id="projectSelect">
-                                <option value="">Select Project</option>
+                                <option value="">-- None (Company Level) --</option>
                                 <!-- Populated via JS -->
                             </select>
+                            <small class="text-muted" id="projectHelpText">Leave empty for company-level roles (Super Admin, Company Admin)</small>
                         </div>
+                        
+                        <!-- Step 2: Department (Filtered by Project) -->
                         <div class="col-md-6">
-                            <label class="form-label">Department <span class="text-danger">*</span></label>
+                            <label class="form-label">
+                                <span class="badge bg-secondary me-1">2</span>
+                                Department <span class="text-danger">*</span>
+                            </label>
                             <select class="form-select" name="department_id" id="departmentSelect" required>
                                 <option value="">Select Department</option>
-                                <!-- Populated via JS -->
+                                <!-- Populated via JS based on Project -->
                             </select>
+                            <small class="text-muted" id="departmentHelpText">Filtered by selected project</small>
+                        </div>
+                        
+                        <!-- Step 3: Role (Filtered by Department) -->
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <span class="badge bg-secondary me-1">3</span>
+                                Role <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" name="role_id" id="roleSelect" required disabled>
+                                <option value="">Select Department First</option>
+                                <!-- Populated via JS based on Department -->
+                            </select>
+                            <small class="text-muted" id="roleHelpText">Filtered by selected department</small>
+                        </div>
+                        
+                        <!-- Step 4: Reports To (Filtered by Role Hierarchy) -->
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <span class="badge bg-secondary me-1">4</span>
+                                Reports To
+                            </label>
+                            <select class="form-select" name="reports_to" id="managerSelect">
+                                <option value="">No Manager (Top Level)</option>
+                                <!-- Populated via JS based on Role -->
+                            </select>
+                            <small class="text-muted">Select user's direct manager</small>
+                        </div>
+                        
+                        <!-- Section: Account Settings -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-muted border-bottom pb-2 mb-0"><i class="bi bi-gear me-2"></i>Account Settings</h6>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Status</label>
@@ -380,6 +421,15 @@
         font-weight: 600;
     }
 
+    .dept-badge {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(139, 92, 246, 0.1));
+        color: #4f46e5;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+    }
+
     .action-btn {
         background: rgba(184, 149, 106, 0.1);
         border: 1px solid rgba(184, 149, 106, 0.3);
@@ -448,25 +498,268 @@
     let statusFilter = '';
     let rolesData = [];
     let usersData = [];
+    let projectsData = [];
+    let departmentsData = [];
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Load initial data
         loadRoles();
-        loadProjects();
+        loadProjectsFilter();
+        loadDepartmentsFilter();
         loadUsers();
 
-        document.getElementById('btnAddUser').addEventListener('click', openCreateModal);
-        document.getElementById('btnSaveUser').addEventListener('click', saveUser);
-        document.getElementById('searchUsers').addEventListener('input', debounce(handleSearch, 500  ));
-        document.getElementById('filterRole').addEventListener('change', handleFilterChange);
-        document.getElementById('filterProject').addEventListener('change', handleFilterChange);
-        document.getElementById('filterDepartment').addEventListener('change', handleFilterChange);
-        document.getElementById('filterStatus').addEventListener('change', handleFilterChange);
-        document.getElementById('btnClearFilters').addEventListener('click', clearFilters);
+        // Safe event listener attachment (handles @@can directives hiding elements)
+        const btnAddUser = document.getElementById('btnAddUser');
+        if (btnAddUser) {
+            btnAddUser.addEventListener('click', openCreateModal);
+        }
+        
+        document.getElementById('btnSaveUser')?.addEventListener('click', saveUser);
+        document.getElementById('searchUsers')?.addEventListener('input', debounce(handleSearch, 500));
+        document.getElementById('filterRole')?.addEventListener('change', handleFilterChange);
+        document.getElementById('filterProject')?.addEventListener('change', handleFilterChange);
+        document.getElementById('filterDepartment')?.addEventListener('change', handleFilterChange);
+        document.getElementById('filterStatus')?.addEventListener('change', handleFilterChange);
+        document.getElementById('btnClearFilters')?.addEventListener('click', clearFilters);
+
+        // Setup cascade event listeners ONCE (not on every modal open)
+        setupCascadeListeners();
     });
+
+    // Setup cascade listeners only once - PROPER FLOW: Project -> Department -> Role -> Manager
+    function setupCascadeListeners() {
+        const projectSelect = document.getElementById('projectSelect');
+        const departmentSelect = document.getElementById('departmentSelect');
+        const roleSelect = document.getElementById('roleSelect');
+
+        // Step 1: Project change -> Load departments for that project
+        if (projectSelect) {
+            projectSelect.addEventListener('change', async function() {
+                await updateDepartmentsByProject(this.value);
+                // Reset downstream dropdowns
+                resetRoleDropdown();
+                resetManagerDropdown();
+            });
+        }
+
+        // Step 2: Department change -> Load roles for that department
+        if (departmentSelect) {
+            departmentSelect.addEventListener('change', async function() {
+                await updateRolesByDepartment(this.value);
+                // Reset manager dropdown
+                resetManagerDropdown();
+            });
+        }
+
+        // Step 3: Role change -> Update managers (filter by hierarchy)
+        if (roleSelect) {
+            roleSelect.addEventListener('change', function() {
+                updateManagersByRole(this.value);
+            });
+        }
+    }
+
+    // Reset role dropdown to initial state
+    function resetRoleDropdown() {
+        const roleSelect = document.getElementById('roleSelect');
+        if (roleSelect) {
+            roleSelect.innerHTML = '<option value="">Select Department First</option>';
+            roleSelect.disabled = true;
+        }
+    }
+
+    // Reset manager dropdown
+    function resetManagerDropdown() {
+        const managerSelect = document.getElementById('managerSelect');
+        if (managerSelect) {
+            managerSelect.innerHTML = '<option value="">No Manager (Top Level)</option>';
+        }
+    }
+
+    // Load departments based on selected project
+    async function updateDepartmentsByProject(projectId) {
+        const departmentSelect = document.getElementById('departmentSelect');
+        if (!departmentSelect) return;
+
+        // Reset department dropdown
+        departmentSelect.innerHTML = '<option value="">Loading...</option>';
+
+        try {
+            let url = '/api/v1/departments?per_page=100&is_active=1';
+            
+            if (projectId) {
+                // Project selected - load project-level departments (Sales, Pre-Sales, External)
+                url += `&project_id=${projectId}&scope=project`;
+            } else {
+                // No project - load company-level departments only (Management)
+                url += `&scope=company`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) throw new Error('Failed to load departments');
+
+            const data = await response.json();
+            departmentsData = data.data || [];
+
+            // Populate department dropdown
+            departmentSelect.innerHTML = '<option value="">Select Department</option>';
+            departmentsData.forEach(dept => {
+                const label = dept.is_company_level ? `${dept.name} (Company Level)` : dept.name;
+                departmentSelect.innerHTML += `<option value="${dept.id}" data-type="${dept.slug}" data-scope="${dept.scope || 'project'}">${label}</option>`;
+            });
+
+            // Update help text
+            const helpText = document.getElementById('departmentHelpText');
+            if (helpText) {
+                helpText.textContent = projectId 
+                    ? `Showing departments for selected project` 
+                    : 'Showing company-level departments (no project selected)';
+            }
+
+        } catch (error) {
+            console.error('Error loading departments:', error);
+            departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+        }
+    }
+
+    // Load roles based on selected department type
+    async function updateRolesByDepartment(departmentId) {
+        const roleSelect = document.getElementById('roleSelect');
+        const departmentSelect = document.getElementById('departmentSelect');
+        if (!roleSelect || !departmentId) {
+            resetRoleDropdown();
+            return;
+        }
+
+        // Get department type from selected option
+        const selectedOption = departmentSelect.options[departmentSelect.selectedIndex];
+        const deptType = selectedOption?.dataset?.type;
+
+        roleSelect.innerHTML = '<option value="">Loading...</option>';
+        roleSelect.disabled = true;
+
+        try {
+            // Department type to slug mapping for roles
+            const deptRoleMapping = {
+                'management': ['super_admin', 'company_admin'],
+                'sales': ['project_manager', 'senior_sales_executive', 'sales_executive'],
+                'pre_sales': ['team_leader', 'telecaller'],
+                'pre-sales': ['team_leader', 'telecaller'],
+                'external': ['channel_partner']
+            };
+
+            const allowedSlugs = deptRoleMapping[deptType] || [];
+            
+            // Filter roles based on department type
+            const filteredRoles = rolesData.filter(role => allowedSlugs.includes(role.slug));
+
+            roleSelect.innerHTML = '<option value="">Select Role</option>';
+            filteredRoles.forEach(role => {
+                const scopeLabel = role.requires_project_assignment ? '' : ' (Company Wide)';
+                roleSelect.innerHTML += `<option value="${role.id}" data-hierarchy="${role.hierarchy_level}" data-scope="${role.scope}">${role.name}${scopeLabel}</option>`;
+            });
+
+            roleSelect.disabled = false;
+
+            // Update help text
+            const helpText = document.getElementById('roleHelpText');
+            if (helpText) {
+                helpText.textContent = `Showing roles for ${selectedOption?.textContent || 'selected department'}`;
+            }
+
+        } catch (error) {
+            console.error('Error filtering roles:', error);
+            roleSelect.innerHTML = '<option value="">Error loading roles</option>';
+        }
+    }
+
+    // Update managers dropdown based on selected role hierarchy
+    function updateManagersByRole(roleId) {
+        const managerSelect = document.getElementById('managerSelect');
+        const roleSelect = document.getElementById('roleSelect');
+        if (!managerSelect) return;
+
+        // Get hierarchy level of selected role
+        const selectedOption = roleSelect?.options[roleSelect.selectedIndex];
+        const hierarchyLevel = parseInt(selectedOption?.dataset?.hierarchy) || 99;
+
+        // Filter users to show only those with higher authority (lower hierarchy number)
+        const potentialManagers = usersData.filter(user => {
+            const userHierarchy = user.role?.hierarchy_level || 99;
+            return userHierarchy < hierarchyLevel && user.is_active;
+        });
+
+        managerSelect.innerHTML = '<option value="">No Manager (Top Level)</option>';
+        potentialManagers.forEach(user => {
+            const roleLabel = user.role?.name || '';
+            managerSelect.innerHTML += `<option value="${user.id}">${user.first_name} ${user.last_name} (${roleLabel})</option>`;
+        });
+    }
+
+    // Load projects for filter dropdown
+    async function loadProjectsFilter() {
+        try {
+            const response = await fetch('/api/v1/projects?per_page=100', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            projectsData = data.data || [];
+            
+            const filterProject = document.getElementById('filterProject');
+            if (filterProject) {
+                projectsData.forEach(project => {
+                    filterProject.innerHTML += `<option value="${project.id}">${project.name}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error('Error loading projects:', error);
+        }
+    }
+
+    // Load departments for filter dropdown
+    async function loadDepartmentsFilter() {
+        try {
+            const response = await fetch('/api/v1/departments?per_page=100', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            const departments = data.data || [];
+            
+            const filterDepartment = document.getElementById('filterDepartment');
+            if (filterDepartment) {
+                departments.forEach(dept => {
+                    filterDepartment.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error('Error loading departments:', error);
+        }
+    }
 
     async function loadRoles() {
         try {
-            const response = await fetch('/roles?per_page=100', {
+            const response = await fetch('/api/v1/roles?per_page=100', {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -483,7 +776,7 @@
 
     async function loadDepartments() {
         try {
-            const response = await fetch('/departments?per_page=100', {
+            const response = await fetch('/api/v1/departments?per_page=100', {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -556,6 +849,12 @@
         tbody.innerHTML = '';
 
         users.forEach(user => {
+            // Get first project if available
+            const firstProject = user.projects && user.projects.length > 0 ? user.projects[0] : null;
+            const projectName = firstProject ? firstProject.name : '-';
+            const projectCount = user.projects?.length || 0;
+            const projectLabel = projectCount > 1 ? `${projectName} <span class="badge bg-secondary ms-1">+${projectCount - 1}</span>` : projectName;
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
@@ -566,8 +865,9 @@
                 </td>
                 <td><strong>${user.first_name} ${user.last_name}</strong></td>
                 <td>${user.email}</td>
+                <td><span class="dept-badge">${user.department?.name || '-'}</span></td>
                 <td><span class="role-badge">${user.role?.name || 'N/A'}</span></td>
-                <td>${user.phone || '-'}</td>
+                <td>${projectLabel}</td>
                 <td>
                     <span class="badge-${user.is_active ? 'active' : 'inactive'}">
                         ${user.is_active ? 'Active' : 'Inactive'}
@@ -630,59 +930,43 @@
         document.getElementById('userId').value = '';
         document.getElementById('passwordInput').required = true;
         document.querySelector('.password-required').style.display = 'inline';
-        populateManagerDropdown();
+        
+        // Initialize cascade: Load projects first, then trigger department load
         populateProjectsInForm();
         new bootstrap.Modal(document.getElementById('userModal')).show();
     }
 
     async function populateProjectsInForm() {
         const select = document.getElementById('projectSelect');
-        select.innerHTML = '<option value="">Select Project</option>';
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">-- None (Company Level) --</option>';
         
         try {
-            const response = await fetch('/projects?per_page=100', {
+            const response = await fetch('/api/v1/projects?per_page=100', {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin'
             });
+            
+            if (!response.ok) return;
+            
             const data = await response.json();
             data.data.forEach(project => {
                 select.innerHTML += `<option value="${project.id}">${project.name}</option>`;
             });
-
-            // Add change listener for project selection
-            select.addEventListener('change', async function() {
-                await updateDepartmentsByProject(this.value);
-            });
+            
+            // Initialize cascade: Load company-level departments (no project selected)
+            await updateDepartmentsByProject('');
+            resetRoleDropdown();
         } catch (error) {
             console.error('Error loading projects:', error);
         }
     }
 
-    async function updateDepartmentsByProject(projectId) {
-        const select = document.getElementById('departmentSelect');
-        select.innerHTML = '<option value="">Select Department</option>';
-        
-        if (!projectId) {
-            select.disabled = true;
-            return;
-        }
-        
-        try {
-            const departments = await loadDepartments();
-            const filteredDepts = departments.filter(d => d.project_id == projectId);
-            
-            filteredDepts.forEach(dept => {
-                select.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-            });
-            
-            select.disabled = filteredDepts.length === 0;
-        } catch (error) {
-            console.error('Error updating departments:', error);
-        }
-    }
+    // Old duplicate functions removed - using new cascade functions defined above
 
     async function populateManagerDropdown() {
         const select = document.getElementById('managerSelect');
@@ -770,6 +1054,12 @@
         // Add company_id (from current user's company)
         if (!isEdit) {
             jsonData.company_id = {{ auth()->user()->company_id }};
+        }
+
+        // Convert project_id to project_ids array for backend
+        if (jsonData.project_id) {
+            jsonData.project_ids = [jsonData.project_id];
+            delete jsonData.project_id;
         }
 
         try {

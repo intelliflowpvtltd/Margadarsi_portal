@@ -34,7 +34,7 @@ class UserController extends Controller
     private function getUsersJson(Request $request): JsonResponse
     {
         $user = auth()->user();
-        $query = User::with(['company', 'role', 'manager']);
+        $query = User::with(['company', 'role', 'department', 'manager', 'projects']);
 
         // Filter by company (Super Admin can see all, others see their company only)
         if ($user->role->hierarchy_level > 1) {
@@ -146,7 +146,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'employee_code' => 'nullable|string|max:50',
             'designation' => 'nullable|string|max:100',
-            'department' => 'nullable|string|max:100',
+            'department_id' => 'nullable|exists:departments,id',
             'reports_to' => 'nullable|exists:users,id',
             'is_active' => 'boolean',
             'project_ids' => 'nullable|array',
@@ -161,13 +161,15 @@ class UserController extends Controller
             ], 403);
         }
 
-        // Check if role requires project assignment (hierarchy level > 3)
-        $requiresProject = $targetRole->hierarchy_level > 3;
+        // Check if role requires project assignment based on scope
+        // Company scope (Super Admin, Company Admin) = no project needed
+        // Project scope (Project Manager, Sales, etc.) = project required
+        $requiresProject = $targetRole->scope !== 'company';
         $projectIds = $validated['project_ids'] ?? [];
 
         if ($requiresProject && empty($projectIds)) {
             return response()->json([
-                'message' => 'Users with this role must be assigned to at least one project.',
+                'message' => 'Users with project-level roles must be assigned to at least one project.',
                 'errors' => ['project_ids' => ['At least one project is required for this role.']],
             ], 422);
         }
@@ -230,7 +232,7 @@ class UserController extends Controller
         }
 
         // Load relationships for the view
-        $user->load(['company', 'role', 'manager', 'directReports', 'projects']);
+        $user->load(['company', 'role', 'department', 'manager', 'directReports', 'projects']);
 
         return view('users.show', compact('user'));
     }
@@ -282,9 +284,11 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'employee_code' => 'nullable|string|max:50',
             'designation' => 'nullable|string|max:100',
-            'department' => 'nullable|string|max:100',
+            'department_id' => 'sometimes|nullable|exists:departments,id',
             'reports_to' => 'nullable|exists:users,id',
             'is_active' => 'boolean',
+            'project_ids' => 'sometimes|nullable|array',
+            'project_ids.*' => 'exists:projects,id',
         ]);
 
         // Check role hierarchy if changing role
@@ -329,8 +333,26 @@ class UserController extends Controller
             $validated['avatar'] = '/storage/' . $avatarPath;
         }
 
+        // Handle project_ids - remove from validated data before update
+        $projectIds = $validated['project_ids'] ?? null;
+        unset($validated['project_ids']);
+        
         $user->update($validated);
-        $user->fresh()->load(['company', 'role', 'manager']);
+        
+        // Sync projects if project_ids was provided
+        if ($projectIds !== null) {
+            $syncData = [];
+            foreach ($projectIds as $projectId) {
+                $syncData[$projectId] = [
+                    'access_level' => 'member',
+                    'assigned_at' => now(),
+                    'assigned_by' => $authUser->id,
+                ];
+            }
+            $user->projects()->sync($syncData);
+        }
+        
+        $user->fresh()->load(['company', 'role', 'department', 'manager', 'projects']);
 
         return response()->json([
             'message' => 'User updated successfully.',

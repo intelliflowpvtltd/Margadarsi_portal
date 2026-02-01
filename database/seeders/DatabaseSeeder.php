@@ -11,11 +11,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Call seeders in correct order respecting dependencies
+        // Use OrganizationSeeder which creates:
+        // 1. Company
+        // 2. Permissions
+        // 3. Projects
+        // 4. Departments (Management, Sales, Pre-Sales)
+        // 5. Roles (properly associated with departments)
+        // 6. Permissions assigned to roles
+        // 7. Users with proper role assignments
         $this->call([
-            PermissionSeeder::class,      // 1. Seed permissions first
-            RoleSeeder::class,             // 2. Create roles with permissions
-            UserSeeder::class,             // 3. Create users with roles
+            OrganizationSeeder::class,
         ]);
     }
 }

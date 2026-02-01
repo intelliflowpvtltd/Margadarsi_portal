@@ -71,6 +71,12 @@ abstract class BaseMasterController extends Controller
     {
         $validated = $request->validate($this->validationRules);
         
+        // Auto-inject company_id if the model has it in fillable and user is authenticated
+        $model = new $this->modelClass;
+        if (in_array('company_id', $model->getFillable()) && auth()->check()) {
+            $validated['company_id'] = auth()->user()->company_id;
+        }
+        
         $item = $this->modelClass::create($validated);
 
         // Load any relationships
@@ -177,7 +183,7 @@ abstract class BaseMasterController extends Controller
     /**
      * Load relationships (override in child controllers)
      */
-    protected function loadRelationships(Model $item): Model
+    protected function loadRelationships($item)
     {
         return $item;
     }

@@ -31,6 +31,7 @@
                         <h1 class="page-title mb-0" id="roleNameHeader">Role Name</h1>
                         <span class="badge-type" id="roleTypeBadge">System</span>
                         <span class="badge-hierarchy" id="hierarchyBadge">Level 1</span>
+                        <span class="badge-scope" id="scopeBadge">Company-wide</span>
                     </div>
                     <p class="text-muted mb-0" id="roleDescription">Role description</p>
                 </div>
@@ -243,6 +244,18 @@
         font-size: 0.75rem;
         font-weight: 600;
         border: 1px solid rgba(184, 149, 106, 0.3);
+    }
+
+    .badge-scope {
+        background: linear-gradient(135deg, #0dcaf0, #0baccc);
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
     }
 
     /* Stats Card Detailed */
@@ -509,39 +522,75 @@
 
     // Display role details
     function displayRoleDetails(role) {
+        // Safe element setter helper
+        const safeSet = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+
+        const safeSetHref = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.href = value;
+        };
+
+        const safeSetHtml = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = value;
+        };
+
+        const safeSetDisplay = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = value;
+        };
+
         // Header
-        document.getElementById('roleName').textContent = role.name;
-        document.getElementById('roleNameHeader').textContent = role.name;
-        document.getElementById('roleDescription').textContent = role.description || 'No description provided';
+        safeSet('roleName', role.name);
+        safeSet('roleNameHeader', role.name);
+        safeSet('roleDescription', role.description || 'No description provided');
 
         // Type badge
         const typeBadge = document.getElementById('roleTypeBadge');
-        typeBadge.textContent = role.is_system ? 'System' : 'Custom';
-        typeBadge.classList.add(role.is_system ? 'system' : 'custom');
+        if (typeBadge) {
+            typeBadge.textContent = role.is_system ? 'System' : 'Custom';
+            typeBadge.classList.add(role.is_system ? 'system' : 'custom');
+        }
 
         // Hierarchy badge
-        document.getElementById('hierarchyBadge').textContent = `Level ${role.hierarchy_level}`;
+        safeSet('hierarchyBadge', `Level ${role.hierarchy_level}`);
+
+        // Scope badge - handle missing scope gracefully
+        const scopeBadge = document.getElementById('scopeBadge');
+        if (scopeBadge) {
+            const roleScope = role.scope || 'company';
+            const scopeText = roleScope === 'company' ? 'Company-wide' : 
+                             roleScope === 'project' ? 'Project-specific' : 
+                             'Department-specific';
+            const scopeIcon = roleScope === 'company' ? 'bi-building' : 
+                             roleScope === 'project' ? 'bi-diagram-3' : 
+                             'bi-box';
+            scopeBadge.innerHTML = `<i class="bi ${scopeIcon}"></i> ${scopeText}`;
+        }
 
         // Icon
         const icon = getRoleIcon(role.slug);
-        document.getElementById('roleIcon').innerHTML = `<i class="bi ${icon}"></i>`;
+        safeSetHtml('roleIcon', `<i class="bi ${icon}"></i>`);
 
         // Stats
-        document.getElementById('permissionsCount').textContent = role.permissions_count || 0;
-        document.getElementById('usersCount').textContent = role.users_count || 0;
-        document.getElementById('hierarchyLevel').textContent = `Level ${role.hierarchy_level}`;
-        document.getElementById('createdDate').textContent = formatDate(role.created_at);
+        safeSet('permissionsCount', role.permissions_count || 0);
+        safeSet('usersCount', role.users_count || 0);
+        safeSet('hierarchyLevel', `Level ${role.hierarchy_level}`);
+        safeSet('createdDate', formatDate(role.created_at));
 
         // Update edit button link
-        document.getElementById('editRoleBtn').href = `/roles/${role.id}/edit`;
-        document.getElementById('managePermissionsBtn').href = `/roles/${role.id}/permissions`;
+        safeSetHref('editRoleBtn', `/roles/${role.id}/edit`);
+        safeSetHref('managePermissionsBtn', `/roles/${role.id}/permissions`);
 
         // Update users badge
-        document.getElementById('usersBadge').textContent = `${role.users_count || 0} users`;
+        safeSet('usersBadge', `${role.users_count || 0} users`);
 
         // Hide delete button if system role
         if (role.is_system) {
-            document.getElementById('deleteRoleBtn').style.display = 'none';
+            safeSetDisplay('deleteRoleBtn', 'none');
         }
 
         // Load permissions and users

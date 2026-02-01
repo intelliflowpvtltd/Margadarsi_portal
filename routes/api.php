@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -77,13 +78,30 @@ Route::prefix('v1')->group(function () {
         Route::put('projects/{project}/specification', [ProjectController::class, 'updateSpecification'])
             ->middleware('permission:projects.manage-specifications');
 
+        // ==================== DEPARTMENT ROUTES ====================
+        Route::get('departments', [DepartmentController::class, 'index'])
+            ->middleware('permission:departments.view');
+        Route::post('departments', [DepartmentController::class, 'store'])
+            ->middleware('permission:departments.create');
+        Route::get('departments/{department}', [DepartmentController::class, 'show'])
+            ->middleware('permission:departments.view');
+        Route::put('departments/{department}', [DepartmentController::class, 'update'])
+            ->middleware('permission:departments.update');
+        Route::delete('departments/{department}', [DepartmentController::class, 'destroy'])
+            ->middleware('permission:departments.delete');
+        Route::get('departments/{department}/stats', [DepartmentController::class, 'stats'])
+            ->middleware('permission:departments.stats');
+
         // ==================== ROLE ROUTES ====================
         Route::get('roles', [RoleController::class, 'index'])
             ->middleware('permission:roles.view');
+        Route::get('roles/create', [RoleController::class, 'create'])
+            ->middleware('permission:roles.create');
         Route::post('roles', [RoleController::class, 'store'])
             ->middleware('permission:roles.create');
         Route::get('roles/{role}', [RoleController::class, 'show'])
-            ->middleware('permission:roles.view');
+            ->middleware('permission:roles.view')
+            ->whereNumber('role');
         Route::put('roles/{role}', [RoleController::class, 'update'])
             ->middleware('permission:roles.update');
         Route::delete('roles/{role}', [RoleController::class, 'destroy'])

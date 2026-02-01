@@ -17,6 +17,7 @@ class Role extends Model
         'company_id',
         'project_id',
         'department_id',
+        'scope',
         'name',
         'slug',
         'description',
@@ -32,124 +33,170 @@ class Role extends Model
     ];
 
     /**
+     * Scope constants.
+     */
+    public const SCOPE_COMPANY = 'company';
+    public const SCOPE_PROJECT = 'project';
+    public const SCOPE_DEPARTMENT = 'department';
+
+    /**
      * Default hierarchy levels for system roles.
+     * 
+     * Lower number = higher authority
+     * Company-level roles: 1-2
+     * Project-level roles: 3-6
      */
     public const HIERARCHY_LEVELS = [
-        'super_admin' => 1,
-        'admin' => 2,
-        'sales_director' => 3,
-        'sales_manager' => 4,
-        'project_manager' => 5,
-        'team_lead' => 6,
-        'telecaller' => 7,
-        'channel_partner' => 8,
+        'super_admin' => 1,           // Father of System (Company Level)
+        'company_admin' => 2,         // Father of Company (Company Level)
+        'project_manager' => 3,       // Father of Project (Project Level)
+        'senior_sales_executive' => 4, // Senior Sales (Project Level)
+        'team_leader' => 4,           // Pre-sales Team Lead (Project Level)
+        'sales_executive' => 5,       // Sales (Project Level)
+        'telecaller' => 5,            // Pre-sales Telecaller (Project Level)
+        'channel_partner' => 6,       // External Lead Source (Project Level)
     ];
 
     /**
      * System roles configuration for seeding.
+     * Scope defines whether the role is company-wide or project-specific.
+     * - company: Can access all projects (Management department roles)
+     * - project: Assigned to specific projects (Sales, Pre-Sales, External department roles)
      */
     public const SYSTEM_ROLES = [
+        // ===== COMPANY LEVEL (Management Department) =====
         [
             'name' => 'Super Admin',
             'slug' => 'super_admin',
-            'description' => 'Full system access with all permissions',
+            'description' => 'Father of System - Full access across all companies and projects',
             'hierarchy_level' => 1,
+            'scope' => self::SCOPE_COMPANY,
         ],
         [
-            'name' => 'Admin',
-            'slug' => 'admin',
-            'description' => 'Company administrator with most permissions',
+            'name' => 'Company Admin',
+            'slug' => 'company_admin',
+            'description' => 'Father of Company - Full access to all projects within the company',
             'hierarchy_level' => 2,
+            'scope' => self::SCOPE_COMPANY,
         ],
-        [
-            'name' => 'Sales Director',
-            'slug' => 'sales_director',
-            'description' => 'Director of sales operations',
-            'hierarchy_level' => 3,
-        ],
-        [
-            'name' => 'Sales Manager',
-            'slug' => 'sales_manager',
-            'description' => 'Manages sales team and operations',
-            'hierarchy_level' => 4,
-        ],
+        // ===== PROJECT LEVEL (Sales Department) =====
         [
             'name' => 'Project Manager',
             'slug' => 'project_manager',
-            'description' => 'Manages project execution and reporting',
-            'hierarchy_level' => 5,
+            'description' => 'Father of Project - Manages project operations and team',
+            'hierarchy_level' => 3,
+            'scope' => self::SCOPE_PROJECT,
         ],
         [
-            'name' => 'Team Lead',
-            'slug' => 'team_lead',
-            'description' => 'Leads a team of telecallers',
-            'hierarchy_level' => 6,
+            'name' => 'Senior Sales Executive',
+            'slug' => 'senior_sales_executive',
+            'description' => 'Senior sales role within assigned projects',
+            'hierarchy_level' => 4,
+            'scope' => self::SCOPE_PROJECT,
+        ],
+        [
+            'name' => 'Sales Executive',
+            'slug' => 'sales_executive',
+            'description' => 'Handles sales leads and conversions for assigned projects',
+            'hierarchy_level' => 5,
+            'scope' => self::SCOPE_PROJECT,
+        ],
+        // ===== PROJECT LEVEL (Pre-Sales Department) =====
+        [
+            'name' => 'Team Leader',
+            'slug' => 'team_leader',
+            'description' => 'Leads pre-sales team within assigned projects',
+            'hierarchy_level' => 4,
+            'scope' => self::SCOPE_PROJECT,
         ],
         [
             'name' => 'Telecaller',
             'slug' => 'telecaller',
-            'description' => 'Handles leads and customer calls',
-            'hierarchy_level' => 7,
+            'description' => 'Handles initial lead calls and qualification for assigned projects',
+            'hierarchy_level' => 5,
+            'scope' => self::SCOPE_PROJECT,
         ],
+        // ===== PROJECT LEVEL (External Department) =====
         [
             'name' => 'Channel Partner',
             'slug' => 'channel_partner',
-            'description' => 'External partner with limited access',
-            'hierarchy_level' => 8,
+            'description' => 'External lead source with limited access to assigned projects',
+            'hierarchy_level' => 6,
+            'scope' => self::SCOPE_PROJECT,
         ],
     ];
 
 
     /**
      * Department-based role configuration.
+     * Management department roles are COMPANY scope (above project level).
+     * Sales, Pre-Sales, and External department roles are PROJECT scope.
      */
     public const DEPARTMENT_ROLES = [
+        // ===== COMPANY LEVEL DEPARTMENT =====
         'management' => [
             [
                 'name' => 'Super Admin',
                 'slug' => 'super_admin',
-                'description' => 'Full system access across all companies',
+                'description' => 'Father of System - Full access across all companies and projects',
                 'hierarchy_level' => 1,
+                'scope' => self::SCOPE_COMPANY,
             ],
             [
                 'name' => 'Company Admin',
                 'slug' => 'company_admin',
-                'description' => 'Company-level admin, manages all projects',
+                'description' => 'Father of Company - Full access to all projects within the company',
                 'hierarchy_level' => 2,
+                'scope' => self::SCOPE_COMPANY,
             ],
         ],
+        // ===== PROJECT LEVEL DEPARTMENTS =====
         'sales' => [
             [
                 'name' => 'Project Manager',
                 'slug' => 'project_manager',
-                'description' => 'Manages project-level operations',
+                'description' => 'Father of Project - Manages project operations and team',
                 'hierarchy_level' => 3,
+                'scope' => self::SCOPE_PROJECT,
             ],
             [
                 'name' => 'Senior Sales Executive',
                 'slug' => 'senior_sales_executive',
-                'description' => 'Senior sales role, manages sales team',
+                'description' => 'Senior sales role within assigned projects',
                 'hierarchy_level' => 4,
+                'scope' => self::SCOPE_PROJECT,
             ],
             [
                 'name' => 'Sales Executive',
                 'slug' => 'sales_executive',
-                'description' => 'Handles sales leads and conversions',
+                'description' => 'Handles sales leads and conversions for assigned projects',
                 'hierarchy_level' => 5,
+                'scope' => self::SCOPE_PROJECT,
             ],
         ],
         'pre_sales' => [
             [
                 'name' => 'Team Leader',
                 'slug' => 'team_leader',
-                'description' => 'Leads pre-sales team activities',
+                'description' => 'Leads pre-sales team within assigned projects',
                 'hierarchy_level' => 4,
+                'scope' => self::SCOPE_PROJECT,
             ],
             [
                 'name' => 'Telecaller',
                 'slug' => 'telecaller',
-                'description' => 'Handles initial lead calls and qualification',
+                'description' => 'Handles initial lead calls and qualification for assigned projects',
                 'hierarchy_level' => 5,
+                'scope' => self::SCOPE_PROJECT,
+            ],
+        ],
+        'external' => [
+            [
+                'name' => 'Channel Partner',
+                'slug' => 'channel_partner',
+                'description' => 'External lead source with limited access to assigned projects',
+                'hierarchy_level' => 6,
+                'scope' => self::SCOPE_PROJECT,
             ],
         ],
     ];
@@ -221,6 +268,31 @@ class Role extends Model
     }
 
     /**
+     * Get the computed scope based on relationships.
+     * If department_id is set, scope is 'department'.
+     * If project_id is set (but not department), scope is 'project'.
+     * Otherwise, scope is 'company'.
+     */
+    public function getScopeAttribute(): string
+    {
+        // First check if there's an actual scope value stored
+        if (!empty($this->attributes['scope'] ?? null)) {
+            return $this->attributes['scope'];
+        }
+
+        // Compute scope from relationships
+        if (!empty($this->department_id)) {
+            return self::SCOPE_DEPARTMENT;
+        }
+
+        if (!empty($this->project_id)) {
+            return self::SCOPE_PROJECT;
+        }
+
+        return self::SCOPE_COMPANY;
+    }
+
+    /**
      * Check if this role has higher authority than another.
      */
     public function hasHigherAuthorityThan(Role $otherRole): bool
@@ -237,11 +309,11 @@ class Role extends Model
     }
 
     /**
-     * Check if this is a global (company-wide) role.
+     * Check if this is a company-wide role.
      */
-    public function isGlobal(): bool
+    public function isCompanyWide(): bool
     {
-        return is_null($this->department_id) && is_null($this->project_id);
+        return $this->scope === self::SCOPE_COMPANY;
     }
 
     /**
@@ -249,7 +321,24 @@ class Role extends Model
      */
     public function isProjectSpecific(): bool
     {
-        return !is_null($this->project_id) && !is_null($this->department_id);
+        return $this->scope === self::SCOPE_PROJECT;
+    }
+
+    /**
+     * Check if this is a department-specific role.
+     */
+    public function isDepartmentSpecific(): bool
+    {
+        return $this->scope === self::SCOPE_DEPARTMENT;
+    }
+
+    /**
+     * Check if this is a global (company-wide) role.
+     * Alias for isCompanyWide() for backward compatibility.
+     */
+    public function isGlobal(): bool
+    {
+        return $this->isCompanyWide();
     }
 
     /**
@@ -327,11 +416,20 @@ class Role extends Model
     }
 
     /**
+     * Scope for company-wide roles.
+     */
+    public function scopeCompanyWide($query)
+    {
+        return $query->where('scope', self::SCOPE_COMPANY);
+    }
+
+    /**
      * Scope for global roles (company-wide, no department/project).
+     * Alias for scopeCompanyWide() for backward compatibility.
      */
     public function scopeGlobal($query)
     {
-        return $query->whereNull('department_id')->whereNull('project_id');
+        return $query->where('scope', self::SCOPE_COMPANY);
     }
 
     /**
@@ -339,7 +437,15 @@ class Role extends Model
      */
     public function scopeProjectSpecific($query)
     {
-        return $query->whereNotNull('project_id')->whereNotNull('department_id');
+        return $query->where('scope', self::SCOPE_PROJECT);
+    }
+
+    /**
+     * Scope for department-specific roles.
+     */
+    public function scopeDepartmentSpecific($query)
+    {
+        return $query->where('scope', self::SCOPE_DEPARTMENT);
     }
 
     // ==================== STATIC METHODS ====================

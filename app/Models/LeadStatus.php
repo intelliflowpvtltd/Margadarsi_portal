@@ -44,10 +44,13 @@ class LeadStatus extends Model
 
     /**
      * Get all leads with this status
+     * Note: Leads table uses string 'status' column matching the slug, not a foreign key
      */
     public function leads(): HasMany
     {
-        return $this->hasMany(Lead::class, 'status_id');
+        // This is a pseudo-relationship - leads use string status that matches this slug
+        // For counting purposes, we use a custom query
+        return $this->hasMany(Lead::class, 'status', 'slug');
     }
 
     /**
@@ -84,10 +87,11 @@ class LeadStatus extends Model
 
     /**
      * Check if this lead status can be deleted
+     * Uses slug to match against leads.status string column
      */
     public function canBeDeleted(): bool
     {
-        return $this->leads()->count() === 0;
+        return Lead::where('status', $this->slug)->count() === 0;
     }
 
     /**

@@ -15,7 +15,8 @@ class RoleController extends Controller
      */
     public function index()
     {
-        return view('roles.index');
+        $totalPermissions = Permission::count();
+        return view('roles.index', compact('totalPermissions'));
     }
 
     /**
@@ -102,7 +103,23 @@ class RoleController extends Controller
      */
     public function updatePermissions(Request $request, $id): JsonResponse
     {
+        // Authorization check - user must have roles.update permission
+        if (!auth()->user()->hasPermission('roles.update')) {
+            return response()->json([
+                'message' => 'Unauthorized. You do not have permission to update roles.',
+                'required_permission' => 'roles.update'
+            ], 403);
+        }
+
         $role = Role::findOrFail($id);
+
+        // Prevent non-super-admins from editing system roles
+        if ($role->is_system && !auth()->user()->isSuperAdmin()) {
+            return response()->json([
+                'message' => 'Unauthorized. Only Super Admins can modify system roles.',
+                'role' => $role->name
+            ], 403);
+        }
 
         $request->validate([
             'permissions' => 'required|array',
@@ -123,6 +140,7 @@ class RoleController extends Controller
             'message' => 'Permissions updated successfully.',
             'data' => [
                 'role_id' => $role->id,
+                'role_name' => $role->name,
                 'permissions_count' => count($permissionIds),
             ],
         ]);

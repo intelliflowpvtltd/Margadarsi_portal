@@ -164,11 +164,11 @@ class OrganizationSeeder extends Seeder
         $roles = [];
 
         foreach ($roleDefinitions as $roleData) {
+            // Create roles at company-level only (not per-project) to avoid duplicates
+            // Roles are shared across all projects in a company
             $roles[$roleData['slug']] = Role::firstOrCreate(
                 [
                     'company_id' => $company->id,
-                    'project_id' => $project->id,
-                    'department_id' => $department->id,
                     'slug' => $roleData['slug'],
                 ],
                 [
@@ -177,6 +177,9 @@ class OrganizationSeeder extends Seeder
                     'hierarchy_level' => $roleData['hierarchy_level'],
                     'is_system' => true,
                     'is_active' => true,
+                    // Set project_id and department_id to null for company-level roles
+                    'project_id' => null,
+                    'department_id' => null,
                 ]
             );
         }
@@ -192,7 +195,7 @@ class OrganizationSeeder extends Seeder
         $permissionMatrix = [
             'management' => [
                 'super_admin' => $permissions->pluck('id')->toArray(), // All permissions
-                'company_admin' => $permissions->whereNotIn('name', ['companies.delete'])->pluck('id')->toArray(),
+                'admin' => $permissions->whereNotIn('name', ['companies.delete'])->pluck('id')->toArray(),
             ],
             'sales' => [
                 'project_manager' => $permissions->whereIn('name', [
@@ -210,7 +213,7 @@ class OrganizationSeeder extends Seeder
                 ])->pluck('id')->toArray(),
             ],
             'pre_sales' => [
-                'team_leader' => $permissions->whereIn('name', [
+                'team_lead' => $permissions->whereIn('name', [
                     'leads.view', 'leads.create', 'leads.update',
                     'users.view',
                 ])->pluck('id')->toArray(),
@@ -269,7 +272,7 @@ class OrganizationSeeder extends Seeder
                 'designation' => 'Chief Executive Officer',
                 'department' => 'Management',
             ],
-            'company_admin' => [
+            'admin' => [
                 'first_name' => 'Company',
                 'last_name' => 'Admin',
                 'email' => 'admin@margadarsi.in',
@@ -305,13 +308,13 @@ class OrganizationSeeder extends Seeder
                 'designation' => 'Sales Executive',
                 'department' => 'Sales',
             ],
-            'team_leader' => [
+            'team_lead' => [
                 'first_name' => 'Sneha',
                 'last_name' => 'Reddy',
                 'email' => 'sneha.reddy@margadarsi.in',
                 'phone' => '9876543215',
                 'employee_code' => 'EMP006',
-                'designation' => 'Team Leader',
+                'designation' => 'Team Lead',
                 'department' => 'Pre-Sales',
             ],
             'telecaller' => [
@@ -342,11 +345,11 @@ class OrganizationSeeder extends Seeder
             ['Role', 'Email', 'Password'],
             [
                 ['Super Admin', 'superadmin@margadarsi.in', 'password123'],
-                ['Company Admin', 'admin@margadarsi.in', 'password123'],
+                ['Admin', 'admin@margadarsi.in', 'password123'],
                 ['Project Manager', 'vikram.singh@margadarsi.in', 'password123'],
                 ['Sr. Sales Exec', 'priya.sharma@margadarsi.in', 'password123'],
                 ['Sales Executive', 'rajesh.kumar@margadarsi.in', 'password123'],
-                ['Team Leader', 'sneha.reddy@margadarsi.in', 'password123'],
+                ['Team Lead', 'sneha.reddy@margadarsi.in', 'password123'],
                 ['Telecaller', 'rahul.verma@margadarsi.in', 'password123'],
             ]
         );

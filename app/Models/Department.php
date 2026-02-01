@@ -13,7 +13,8 @@ class Department extends Model
     use HasFactory;
 
     protected $fillable = [
-        'project_id',
+        'company_id',  // Company-level departments (e.g., Management)
+        'project_id',  // Project-level departments (e.g., Sales, Pre-sales) - nullable
         'name',
         'slug',
         'description',
@@ -28,17 +29,34 @@ class Department extends Model
     public const TYPE_MANAGEMENT = 'management';
     public const TYPE_SALES = 'sales';
     public const TYPE_PRE_SALES = 'pre_sales';
+    public const TYPE_EXTERNAL = 'external';
 
     public const TYPES = [
         self::TYPE_MANAGEMENT => 'Management',
         self::TYPE_SALES => 'Sales',
         self::TYPE_PRE_SALES => 'Pre-Sales',
+        self::TYPE_EXTERNAL => 'External',
     ];
+
+    // Departments that are company-wide (above project level)
+    public const COMPANY_LEVEL_DEPARTMENTS = ['management'];
+    
+    // Departments that are project-specific
+    public const PROJECT_LEVEL_DEPARTMENTS = ['sales', 'pre_sales', 'external'];
 
     // ==================== RELATIONSHIPS ====================
 
     /**
-     * Department belongs to a project.
+     * Department belongs to a company (for company-wide departments like Management).
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Department belongs to a project (for project-specific departments like Sales, Pre-sales).
+     * Note: This is nullable for company-level departments like Management.
      */
     public function project(): BelongsTo
     {
@@ -98,6 +116,24 @@ class Department extends Model
     }
 
     // ==================== METHODS ====================
+
+    /**
+     * Check if this is a company-level department (above project level).
+     * Company-level departments don't require project assignment.
+     */
+    public function isCompanyLevel(): bool
+    {
+        return in_array($this->slug, self::COMPANY_LEVEL_DEPARTMENTS);
+    }
+
+    /**
+     * Check if this is a project-level department.
+     * Project-level departments require project assignment.
+     */
+    public function isProjectLevel(): bool
+    {
+        return in_array($this->slug, self::PROJECT_LEVEL_DEPARTMENTS);
+    }
 
     /**
      * Check if this is a management department.

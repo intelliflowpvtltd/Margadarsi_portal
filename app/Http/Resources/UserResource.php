@@ -18,6 +18,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'company_id' => $this->company_id,
             'role_id' => $this->role_id,
+            'department_id' => $this->department_id,
 
             // Personal Information
             'first_name' => $this->first_name,
@@ -28,6 +29,11 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'avatar' => $this->avatar,
 
+            // Employee fields
+            'employee_code' => $this->employee_code,
+            'designation' => $this->designation,
+            'reports_to' => $this->reports_to,
+
             // Status
             'is_active' => $this->is_active,
             'last_login_at' => $this->last_login_at?->toISOString(),
@@ -36,6 +42,8 @@ class UserResource extends JsonResource
             // Relationships (optional, loaded when needed)
             'company' => new CompanyResource($this->whenLoaded('company')),
             'role' => new RoleResource($this->whenLoaded('role')),
+            'department' => new DepartmentResource($this->whenLoaded('department')),
+            'manager' => new UserResource($this->whenLoaded('manager')),
             'projects' => ProjectResource::collection($this->whenLoaded('projects')),
             'projects_count' => $this->when(isset($this->projects_count), $this->projects_count),
 

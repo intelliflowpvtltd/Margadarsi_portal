@@ -104,7 +104,7 @@
                             <i class="bi bi-key"></i>
                         </div>
                         <div class="stat-info">
-                            <div class="stat-value">27</div>
+                            <div class="stat-value">{{ $totalPermissions ?? 52 }}</div>
                             <div class="stat-label">Total Permissions</div>
                         </div>
                     </div>
@@ -597,8 +597,9 @@
                 ...(searchQuery && {
                     search: searchQuery
                 }),
+                // Fix: API expects is_system (boolean), not type
                 ...(typeFilter && {
-                    type: typeFilter
+                    is_system: typeFilter === 'system' ? '1' : '0'
                 })
             });
 

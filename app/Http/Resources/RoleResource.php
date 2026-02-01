@@ -12,6 +12,10 @@ class RoleResource extends JsonResource
         return [
             'id' => $this->id,
             'company_id' => $this->company_id,
+            'project_id' => $this->project_id,
+            'department_id' => $this->department_id,
+            'scope' => $this->scope,
+            'requires_project_assignment' => $this->scope !== 'company', // True for project/department scope roles
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,

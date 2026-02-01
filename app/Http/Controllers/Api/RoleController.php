@@ -64,6 +64,22 @@ class RoleController extends Controller
     }
 
     /**
+     * Return data needed for the create role form.
+     */
+    public function create(): JsonResponse
+    {
+        return response()->json([
+            'hierarchy_levels' => Role::HIERARCHY_LEVELS,
+            'scopes' => [
+                Role::SCOPE_COMPANY => 'Company-wide',
+                Role::SCOPE_PROJECT => 'Project-specific',
+                Role::SCOPE_DEPARTMENT => 'Department-specific',
+            ],
+            'department_roles' => Role::DEPARTMENT_ROLES,
+        ]);
+    }
+
+    /**
      * Store a newly created role.
      */
     public function store(StoreRoleRequest $request): JsonResponse

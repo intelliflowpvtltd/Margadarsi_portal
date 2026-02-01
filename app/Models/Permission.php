@@ -39,6 +39,13 @@ class Permission extends Model
             ['name' => 'projects.force-delete', 'display_name' => 'Permanently Delete Projects', 'description' => 'Can permanently delete projects'],
             ['name' => 'projects.manage-specifications', 'display_name' => 'Manage Project Specifications', 'description' => 'Can update project specifications'],
         ],
+        'departments' => [
+            ['name' => 'departments.view', 'display_name' => 'View Departments', 'description' => 'Can view and list departments'],
+            ['name' => 'departments.create', 'display_name' => 'Create Departments', 'description' => 'Can create new departments'],
+            ['name' => 'departments.update', 'display_name' => 'Update Departments', 'description' => 'Can update existing departments'],
+            ['name' => 'departments.delete', 'display_name' => 'Delete Departments', 'description' => 'Can delete departments'],
+            ['name' => 'departments.stats', 'display_name' => 'View Department Statistics', 'description' => 'Can view department statistics'],
+        ],
         'roles' => [
             ['name' => 'roles.view', 'display_name' => 'View Roles', 'description' => 'Can view and list roles'],
             ['name' => 'roles.create', 'display_name' => 'Create Roles', 'description' => 'Can create custom roles'],
@@ -92,6 +99,10 @@ class Permission extends Model
             ['name' => 'settings.view', 'display_name' => 'View Settings', 'description' => 'Can view application settings'],
             ['name' => 'settings.update', 'display_name' => 'Update Settings', 'description' => 'Can modify application settings'],
         ],
+        'masters' => [
+            ['name' => 'masters.manage', 'display_name' => 'Manage Master Data', 'description' => 'Can view and manage master data (locations, statuses, amenities, etc.)'],
+            ['name' => 'masters.view', 'display_name' => 'View Master Data', 'description' => 'Can view master data without editing'],
+        ],
     ];
 
     /**
@@ -104,6 +115,7 @@ class Permission extends Model
             // Full access - all permissions
             'companies.view', 'companies.create', 'companies.update', 'companies.delete', 'companies.restore', 'companies.force-delete',
             'projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.restore', 'projects.force-delete', 'projects.manage-specifications',
+            'departments.view', 'departments.create', 'departments.update', 'departments.delete', 'departments.stats',
             'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.restore', 'roles.force-delete', 'roles.seed',
             'users.view', 'users.create', 'users.update', 'users.delete', 'users.restore', 'users.force-delete', 'users.assign-projects',
             'teams.view', 'teams.create', 'teams.update', 'teams.manage-members',
@@ -111,10 +123,12 @@ class Permission extends Model
             'incentives.view', 'incentives.view-all', 'incentives.approve', 'incentives.reject',
             'reports.own', 'reports.team', 'reports.project', 'reports.company',
             'settings.view', 'settings.update',
+            'masters.manage', 'masters.view',
         ],
         'admin' => [
             'companies.view', 'companies.create', 'companies.update', 'companies.delete', 'companies.restore',
             'projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.restore', 'projects.manage-specifications',
+            'departments.view', 'departments.create', 'departments.update', 'departments.delete', 'departments.stats',
             'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.restore', 'roles.seed',
             'users.view', 'users.create', 'users.update', 'users.delete', 'users.restore', 'users.assign-projects',
             'teams.view', 'teams.create', 'teams.update', 'teams.manage-members',
@@ -122,10 +136,12 @@ class Permission extends Model
             'incentives.view', 'incentives.view-all', 'incentives.approve', 'incentives.reject',
             'reports.own', 'reports.team', 'reports.project', 'reports.company',
             'settings.view',
+            'masters.manage', 'masters.view',
         ],
         'sales_director' => [
             'companies.view',
             'projects.view',
+            'departments.view', 'departments.stats',
             'roles.view',
             'users.view', 'users.create', 'users.update', 'users.delete', 'users.assign-projects',
             'teams.view', 'teams.create', 'teams.update', 'teams.manage-members',
@@ -137,6 +153,7 @@ class Permission extends Model
             // Limited scope: only assigned projects/teams
             'companies.view',
             'projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.restore', 'projects.manage-specifications',
+            'departments.view', 'departments.create', 'departments.update', 'departments.stats',
             'roles.view',
             'users.view', 'users.create', 'users.update', 'users.assign-projects',
             'teams.view', 'teams.update', 'teams.manage-members',
@@ -148,16 +165,41 @@ class Permission extends Model
             // Limited scope: only assigned projects
             'companies.view',
             'projects.view', 'projects.update', 'projects.manage-specifications',
+            'departments.view', 'departments.stats',
             'roles.view',
             'users.view',
             'teams.view', 'teams.update', 'teams.manage-members',
             'leads.view', 'leads.view-team', 'leads.create', 'leads.update', 'leads.delete', 'leads.reassign', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
             'reports.own', 'reports.team',
         ],
+        'senior_sales_executive' => [
+            // Limited scope: manages sales team under project manager
+            'companies.view',
+            'projects.view',
+            'departments.view',
+            'roles.view',
+            'users.view',
+            'teams.view',
+            'leads.view', 'leads.view-team', 'leads.create', 'leads.update', 'leads.reassign', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'incentives.view',
+            'reports.own', 'reports.team',
+        ],
+        'sales_executive' => [
+            // Limited scope: handles sales leads and conversions
+            'companies.view',
+            'projects.view',
+            'departments.view',
+            'roles.view',
+            'users.view',
+            'leads.view', 'leads.create', 'leads.update', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
+            'incentives.view',
+            'reports.own',
+        ],
         'team_lead' => [
             // Limited scope: only assigned projects/teams
             'companies.view',
             'projects.view',
+            'departments.view',
             'roles.view',
             'users.view',
             'leads.view', 'leads.view-team', 'leads.create', 'leads.update', 'leads.reassign', 'leads.log-call', 'leads.qualify', 'leads.disqualify',
@@ -167,6 +209,7 @@ class Permission extends Model
             // Limited scope: only own leads
             'companies.view',
             'projects.view',
+            'departments.view',
             'roles.view',
             'users.view',
             'leads.view', 'leads.create', 'leads.update', 'leads.log-call', 'leads.qualify', 'leads.disqualify',

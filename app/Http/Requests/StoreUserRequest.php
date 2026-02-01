@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\RoleAuthorityCheck;
 
 class StoreUserRequest extends FormRequest
 {
@@ -29,6 +30,8 @@ class StoreUserRequest extends FormRequest
                 'exists:roles,id',
                 // Ensure role belongs to the same company
                 Rule::exists('roles', 'id')->where('company_id', $this->input('company_id')),
+                // Ensure user can only assign roles at or below their authority level
+                new RoleAuthorityCheck(auth()->user()->role),
             ],
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],

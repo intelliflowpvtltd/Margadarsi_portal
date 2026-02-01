@@ -71,7 +71,7 @@
         </li>
     </ul>
 
-    <form id="projectForm" enctype="multipart/form-data">
+    <form id="projectForm" enctype="multipart/form-data" novalidate>
         @csrf
         <div class="tab-content">
             <!-- Tab 1: Basic Info -->
@@ -156,8 +156,8 @@
                         <input type="date" class="form-control" name="rera_valid_until">
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="address_line1" required>
+                        <label class="form-label">Address Line 1</label>
+                        <input type="text" class="form-control" name="address_line1">
                     </div>
                     <div class="col-12">
                         <label class="form-label">Address Line 2</label>

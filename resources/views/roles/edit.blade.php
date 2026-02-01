@@ -112,15 +112,39 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label for="color" class="form-label">
-                                Badge Color
+                            <label for="scope" class="form-label">
+                                Role Scope <span class="text-danger">*</span>
                             </label>
-                            <div class="color-picker-wrapper">
-                                <input type="color" class="form-control form-control-color"
-                                    id="color" name="color" value="#B8956A">
-                                <span class="color-preview"></span>
-                            </div>
-                            <small class="text-muted">Visual identifier for this role</small>
+                            <select class="form-control form-control-premium" id="scope" 
+                                    name="scope" required>
+                                <option value="company">Company-wide</option>
+                                <option value="project">Project-specific</option>
+                                <option value="department">Department-specific</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                            <small class="text-muted">Scope determines where this role applies</small>
+                        </div>
+
+                        <!-- Project Selector (conditional) -->
+                        <div class="col-md-6" id="projectSelector" style="display: none;">
+                            <label for="project_id" class="form-label">
+                                Select Project <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control form-control-premium" id="project_id" name="project_id">
+                                <option value="">Choose a project...</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Department Selector (conditional) -->
+                        <div class="col-md-6" id="departmentSelector" style="display: none;">
+                            <label for="department_id" class="form-label">
+                                Select Department <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control form-control-premium" id="department_id" name="department_id">
+                                <option value="">Choose a department...</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
                         </div>
                     </div>
                 </div>
@@ -311,22 +335,102 @@
 <script>
     const API_BASE_URL = '/api/v1/roles';
     const ROLE_ID = window.location.pathname.split('/')[2]; // Extract ID from URL
+    const COMPANY_ID = parseInt("{{ auth()->user()->company_id ?? 1 }}");
     let currentRole = null;
 
     document.addEventListener('DOMContentLoaded', function() {
         loadRole();
 
-        // Update color preview
-        const colorInput = document.getElementById('color');
-        const colorPreview = document.querySelector('.color-preview');
+        // Scope change handler
+        document.getElementById('scope').addEventListener('change', handleScopeChange);
 
-        colorInput.addEventListener('input', function() {
-            colorPreview.style.background = this.value;
-        });
+        // Load projects and departments
+        loadProjects();
+        loadDepartments();
 
         // Form submission
         document.getElementById('editRoleForm').addEventListener('submit', handleSubmit);
     });
+
+    // Handle scope change
+    function handleScopeChange() {
+        const scope = document.getElementById('scope').value;
+        const projectSelector = document.getElementById('projectSelector');
+        const departmentSelector = document.getElementById('departmentSelector');
+        const projectField = document.getElementById('project_id');
+        const deptField = document.getElementById('department_id');
+        
+        // Hide all first
+        projectSelector.style.display = 'none';
+        departmentSelector.style.display = 'none';
+        projectField.removeAttribute('required');
+        deptField.removeAttribute('required');
+        
+        // Show based on scope
+        if (scope === 'project') {
+            projectSelector.style.display = 'block';
+            projectField.setAttribute('required', 'required');
+        } else if (scope === 'department') {
+            departmentSelector.style.display = 'block';
+            deptField.setAttribute('required', 'required');
+        }
+    }
+
+    // Load projects
+    async function loadProjects() {
+        try {
+            const response = await fetch(`/api/v1/projects?company_id=${COMPANY_ID}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                const select = document.getElementById('project_id');
+                select.innerHTML = '<option value="">Choose a project...</option>';
+                result.data.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = project.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading projects:', error);
+        }
+    }
+
+    // Load departments
+    async function loadDepartments() {
+        try {
+            const response = await fetch(`/api/v1/departments?company_id=${COMPANY_ID}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                const select = document.getElementById('department_id');
+                select.innerHTML = '<option value="">Choose a department...</option>';
+                result.data.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading departments:', error);
+        }
+    }
 
     // Load role data
     async function loadRole() {
@@ -363,8 +467,20 @@
         document.getElementById('slug').value = role.slug || '';
         document.getElementById('description').value = role.description || '';
         document.getElementById('hierarchy_level').value = role.hierarchy_level || 5;
-        document.getElementById('color').value = role.color || '#B8956A';
-        document.querySelector('.color-preview').style.background = role.color || '#B8956A';
+        
+        // Set scope and trigger display logic
+        document.getElementById('scope').value = role.scope || 'company';
+        setTimeout(() => {
+            handleScopeChange();
+            
+            // Set project/department after selectors are populated
+            if (role.project_id) {
+                document.getElementById('project_id').value = role.project_id;
+            }
+            if (role.department_id) {
+                document.getElementById('department_id').value = role.department_id;
+            }
+        }, 500);
 
         // Update metadata
         document.getElementById('permissionsCount').textContent = role.permissions_count || 0;
@@ -379,6 +495,7 @@
             document.getElementById('systemRoleWarning').style.display = 'block';
             document.getElementById('name').setAttribute('readonly', true);
             document.getElementById('hierarchy_level').setAttribute('readonly', true);
+            document.getElementById('scope').setAttribute('disabled', true);
         }
     }
 
@@ -391,11 +508,14 @@
 
         // Get form data
         const formData = new FormData(e.target);
+        const scope = formData.get('scope');
         const data = {
             name: formData.get('name'),
             description: formData.get('description'),
             hierarchy_level: parseInt(formData.get('hierarchy_level')),
-            color: formData.get('color')
+            scope: scope,
+            project_id: scope === 'project' ? parseInt(formData.get('project_id')) || null : null,
+            department_id: scope === 'department' ? parseInt(formData.get('department_id')) || null : null
         };
 
         // Validate

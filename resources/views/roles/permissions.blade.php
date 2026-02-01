@@ -52,7 +52,7 @@
                     <i class="bi bi-key"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-value">27</div>
+                    <div class="stat-value" id="totalPermissionsCount">52</div>
                     <div class="stat-label">Total Permissions</div>
                 </div>
             </div>
@@ -237,6 +237,11 @@
     .module-icon.projects { background: linear-gradient(135deg, #198754, #146c43); }
     .module-icon.roles { background: linear-gradient(135deg, var(--color-dark-maroon), var(--color-maroon-light)); }
     .module-icon.users { background: linear-gradient(135deg, var(--color-coffee-gold), var(--color-coffee-gold-dark)); }
+    .module-icon.teams { background: linear-gradient(135deg, #6610f2, #520dc2); }
+    .module-icon.leads { background: linear-gradient(135deg, #fd7e14, #dc6502); }
+    .module-icon.incentives { background: linear-gradient(135deg, #20c997, #199d76); }
+    .module-icon.reports { background: linear-gradient(135deg, #0dcaf0, #0baccc); }
+    .module-icon.settings { background: linear-gradient(135deg, #6c757d, #5a6268); }
 
     .module-toggle {
         display: flex;
@@ -363,6 +368,69 @@
                 { key: 'users.restore', name: 'Restore Users' },
                 { key: 'users.force-delete', name: 'Permanently Delete Users' },
                 { key: 'users.assign-projects', name: 'Assign Projects' }
+            ]
+        },
+        teams: {
+            icon: 'bi-people-fill',
+            label: 'Teams',
+            permissions: [
+                { key: 'teams.view', name: 'View Teams' },
+                { key: 'teams.create', name: 'Create Teams' },
+                { key: 'teams.update', name: 'Update Teams' },
+                { key: 'teams.manage-members', name: 'Manage Team Members' }
+            ]
+        },
+        leads: {
+            icon: 'bi-person-plus',
+            label: 'Leads',
+            permissions: [
+                { key: 'leads.view', name: 'View Own Leads' },
+                { key: 'leads.view-all', name: 'View All Leads' },
+                { key: 'leads.view-team', name: 'View Team Leads' },
+                { key: 'leads.create', name: 'Create Leads' },
+                { key: 'leads.update', name: 'Update Leads' },
+                { key: 'leads.delete', name: 'Delete Leads' },
+                { key: 'leads.reassign', name: 'Reassign Leads' },
+                { key: 'leads.handover', name: 'Handover Leads' },
+                { key: 'leads.log-call', name: 'Log Calls' },
+                { key: 'leads.qualify', name: 'Qualify Leads' },
+                { key: 'leads.disqualify', name: 'Disqualify Leads' }
+            ]
+        },
+        incentives: {
+            icon: 'bi-cash-coin',
+            label: 'Incentives',
+            permissions: [
+                { key: 'incentives.view', name: 'View Own Incentives' },
+                { key: 'incentives.view-all', name: 'View All Incentives' },
+                { key: 'incentives.approve', name: 'Approve Incentives' },
+                { key: 'incentives.reject', name: 'Reject Incentives' }
+            ]
+        },
+        reports: {
+            icon: 'bi-graph-up',
+            label: 'Reports',
+            permissions: [
+                { key: 'reports.own', name: 'View Own Reports' },
+                { key: 'reports.team', name: 'View Team Reports' },
+                { key: 'reports.project', name: 'View Project Reports' },
+                { key: 'reports.company', name: 'View Company Reports' }
+            ]
+        },
+        settings: {
+            icon: 'bi-gear',
+            label: 'Settings',
+            permissions: [
+                { key: 'settings.view', name: 'View Settings' },
+                { key: 'settings.update', name: 'Update Settings' }
+            ]
+        },
+        masters: {
+            icon: 'bi-sliders',
+            label: 'Master Data',
+            permissions: [
+                { key: 'masters.manage', name: 'Manage Master Data' },
+                { key: 'masters.view', name: 'View Master Data' }
             ]
         }
     };
@@ -525,6 +593,7 @@
         const total = Object.values(PERMISSION_MODULES).reduce((sum, m) => sum + m.permissions.length, 0);
         const assigned = assignedPermissionIds.length;
 
+        document.getElementById('totalPermissionsCount').textContent = total;
         document.getElementById('assignedCount').textContent = assigned;
         document.getElementById('unassignedCount').textContent = total - assigned;
     }

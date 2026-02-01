@@ -221,52 +221,52 @@ class ProjectController extends Controller
                 if ($project->type === 'residential' && !empty($data['residential_spec'])) {
                     $specData = $data['residential_spec'];
                     $project->residentialSpec()->create([
-                        'total_towers' => $specData['total_towers'] ?? null,
-                        'total_floors_per_tower' => $specData['total_floors_per_tower'] ?? null,
-                        'total_units' => $specData['total_units'] ?? null,
-                        'units_per_floor' => $specData['units_per_floor'] ?? null,
+                        'total_towers' => $specData['total_towers'] ?? 0,
+                        'total_floors_per_tower' => $specData['total_floors_per_tower'] ?? 0,
+                        'total_units' => $specData['total_units'] ?? 0,
+                        'units_per_floor' => $specData['units_per_floor'] ?? 0,
                         'basement_levels' => $specData['basement_levels'] ?? 0,
-                        'open_parking_slots' => $specData['open_parking_slots'] ?? null,
-                        'covered_parking_slots' => $specData['covered_parking_slots'] ?? null,
-                        'clubhouse_area_sqft' => $specData['clubhouse_area_sqft'] ?? null,
+                        'open_parking_slots' => $specData['open_parking_slots'] ?? 0,
+                        'covered_parking_slots' => $specData['covered_parking_slots'] ?? 0,
+                        'clubhouse_area_sqft' => $specData['clubhouse_area_sqft'] ?? 0,
                         'stilt_parking' => isset($specData['stilt_parking']) && $specData['stilt_parking'] == '1',
                         'podium_level' => isset($specData['podium_level']) && $specData['podium_level'] == '1',
                     ]);
                 } elseif ($project->type === 'commercial' && !empty($data['commercial_spec'])) {
                     $specData = $data['commercial_spec'];
                     $project->commercialSpec()->create([
-                        'total_floors' => $specData['total_floors'] ?? null,
-                        'total_units' => $specData['total_units'] ?? null,
-                        'office_units' => $specData['office_units'] ?? null,
-                        'retail_units' => $specData['retail_units'] ?? null,
-                        'food_court_area_sqft' => $specData['food_court_area_sqft'] ?? null,
-                        'common_area_percentage' => $specData['common_area_percentage'] ?? null,
-                        'visitor_parking_slots' => $specData['visitor_parking_slots'] ?? null,
-                        'tenant_parking_slots' => $specData['tenant_parking_slots'] ?? null,
+                        'total_floors' => $specData['total_floors'] ?? 0,
+                        'total_units' => $specData['total_units'] ?? 0,
+                        'office_units' => $specData['office_units'] ?? 0,
+                        'retail_units' => $specData['retail_units'] ?? 0,
+                        'food_court_area_sqft' => $specData['food_court_area_sqft'] ?? 0,
+                        'common_area_percentage' => $specData['common_area_percentage'] ?? 0,
+                        'visitor_parking_slots' => $specData['visitor_parking_slots'] ?? 0,
+                        'tenant_parking_slots' => $specData['tenant_parking_slots'] ?? 0,
                         'green_building_certified' => isset($specData['green_building_certified']) && $specData['green_building_certified'] == '1',
                         'certification_type' => $specData['certification_type'] ?? null,
                     ]);
                 } elseif ($project->type === 'villa' && !empty($data['villa_spec'])) {
                     $specData = $data['villa_spec'];
                     $project->villaSpec()->create([
-                        'total_villas' => $specData['total_villas'] ?? null,
+                        'total_villas' => $specData['total_villas'] ?? 0,
                         'villa_types' => $specData['villa_types'] ?? null,
-                        'floors_per_villa' => $specData['floors_per_villa'] ?? null,
-                        'car_parking_per_villa' => $specData['car_parking_per_villa'] ?? null,
-                        'clubhouse_area_sqft' => $specData['clubhouse_area_sqft'] ?? null,
+                        'floors_per_villa' => $specData['floors_per_villa'] ?? 1,
+                        'car_parking_per_villa' => $specData['car_parking_per_villa'] ?? 0,
+                        'clubhouse_area_sqft' => $specData['clubhouse_area_sqft'] ?? 0,
                         'private_garden' => isset($specData['private_garden']) && $specData['private_garden'] == '1',
                         'private_pool' => isset($specData['private_pool']) && $specData['private_pool'] == '1',
                         'servant_quarters' => isset($specData['servant_quarters']) && $specData['servant_quarters'] == '1',
                         'gated_community' => isset($specData['gated_community']) && $specData['gated_community'] == '1',
                     ]);
-                } elseif ($project->type === 'open_plot' && !empty($data['open_plot_spec'])) {
+                } elseif ($project->type === 'open_plots' && !empty($data['open_plot_spec'])) {
                     $specData = $data['open_plot_spec'];
                     $project->openPlotSpec()->create([
-                        'total_plots' => $specData['total_plots'] ?? null,
-                        'min_plot_size_sqyds' => $specData['min_plot_size_sqyds'] ?? null,
-                        'max_plot_size_sqyds' => $specData['max_plot_size_sqyds'] ?? null,
-                        'park_area_sqft' => $specData['park_area_sqft'] ?? null,
-                        'community_hall_sqft' => $specData['community_hall_sqft'] ?? null,
+                        'total_plots' => $specData['total_plots'] ?? 0,
+                        'min_plot_size_sqyds' => $specData['min_plot_size_sqyds'] ?? 0,
+                        'max_plot_size_sqyds' => $specData['max_plot_size_sqyds'] ?? 0,
+                        'park_area_sqft' => $specData['park_area_sqft'] ?? 0,
+                        'community_hall_sqft' => $specData['community_hall_sqft'] ?? 0,
                         'underground_drainage' => isset($specData['underground_drainage']) && $specData['underground_drainage'] == '1',
                         'underground_electricity' => isset($specData['underground_electricity']) && $specData['underground_electricity'] == '1',
                         'water_supply' => isset($specData['water_supply']) && $specData['water_supply'] == '1',
