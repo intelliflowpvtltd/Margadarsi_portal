@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\IsMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Timeline extends Model
 {
-    use HasFactory;
+    use HasFactory, IsMaster;
 
     protected $fillable = [
         'name',
@@ -18,16 +20,25 @@ class Timeline extends Model
     ];
 
     protected $casts = [
+        'min_days' => 'integer',
+        'max_days' => 'integer',
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
-    public function scopeActive($query)
+    /**
+     * Get all leads with this timeline
+     */
+    public function leads(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(Lead::class, 'timeline_id');
     }
 
-    public function scopeOrdered($query)
+    /**
+     * Check if this timeline can be deleted
+     */
+    public function canBeDeleted(): bool
     {
-        return $query->orderBy('sort_order')->orderBy('min_days');
+        return $this->leads()->count() === 0;
     }
 }

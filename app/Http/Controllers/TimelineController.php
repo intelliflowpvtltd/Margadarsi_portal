@@ -11,9 +11,8 @@ class TimelineController extends BaseMasterController
 
     protected array $validationRules = [
         'name' => 'required|string|max:100',
-        'slug' => 'nullable|string|max:100',
-        'days' => 'nullable|integer|min:0',
-        'description' => 'nullable|string',
+        'min_days' => 'nullable|integer|min:0',
+        'max_days' => 'nullable|integer|min:0',
         'is_active' => 'nullable|boolean',
         'sort_order' => 'nullable|integer',
     ];
