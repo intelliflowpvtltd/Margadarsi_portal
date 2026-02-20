@@ -694,7 +694,7 @@
         }
 
         column.innerHTML = leads.map(lead => `
-            <div class="lead-card" onclick="viewLead(${lead.id})">
+            <div class="lead-card" onclick="window.location.href='/leads/${lead.id}'">
                 <div class="lead-card-header">
                     <div>
                         <div class="lead-name">${lead.name}</div>

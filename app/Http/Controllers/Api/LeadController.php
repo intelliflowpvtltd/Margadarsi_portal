@@ -508,7 +508,8 @@ class LeadController extends Controller
             'active' => (clone $query)->active()->count(),
             'closed' => (clone $query)->closed()->count(),
             'sla_breached' => (clone $query)->slaBreach()->count(),
-            'followup_due' => (clone $query)->followupDue()->count(),
+            'followups_due' => (clone $query)->followupDue()->count(),
+            'dormant' => (clone $query)->dormant()->count(),
         ];
 
         // Count by status
@@ -520,6 +521,21 @@ class LeadController extends Controller
         foreach (Lead::STAGES as $stage => $config) {
             $stats['by_stage'][$stage] = (clone $query)->withStage($stage)->count();
         }
+
+        // Average SLA response time (only for leads that have responded)
+        $avgResponse = (clone $query)->whereNotNull('sla_response_seconds')->avg('sla_response_seconds');
+        $stats['avg_response_seconds'] = $avgResponse ? round($avgResponse) : null;
+
+        // Today's metrics
+        $today = now()->startOfDay();
+        $stats['today_new'] = (clone $query)->where('created_at', '>=', $today)->count();
+        $stats['today_calls'] = \App\Models\LeadCall::whereHas('lead', function ($q) use ($query) {
+            $q->whereIn('id', (clone $query)->select('id'));
+        })->where('created_at', '>=', $today)->count();
+        $stats['today_qualified'] = (clone $query)->withStatus('qualified')
+            ->where('updated_at', '>=', $today)->count();
+        $stats['today_handed_over'] = (clone $query)->withStatus('handed_over')
+            ->where('handed_over_at', '>=', $today)->count();
 
         return response()->json([
             'success' => true,

@@ -141,10 +141,13 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:users.assign-projects')->post('users/{user}/projects', [UserController::class, 'assignProjects'])->name('users.assign-projects');
 
 
-    // ==================== LEADS (Placeholder) ====================
+    // ==================== LEADS ====================
     Route::get('/leads', function () {
         return view('leads.index');
     })->name('leads.index');
+    Route::get('/leads/{lead}', function ($lead) {
+        return view('leads.show', ['leadId' => $lead]);
+    })->name('leads.show');
 
     // ==================== MASTER DATA MANAGEMENT ====================
     

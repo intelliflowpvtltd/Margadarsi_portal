@@ -69,9 +69,9 @@ class SuperAdminLoginTest extends TestCase
             ->assertJsonPath('user.email', 'superadmin@test.com')
             ->assertJsonPath('message', 'Login successful.');
 
-        // Verify all 49 permissions are included
+        // Verify all 59 permissions are included
         $returnedPermissions = $response->json('permissions');
-        $this->assertCount(49, $returnedPermissions);
+        $this->assertCount(59, $returnedPermissions);
         $this->assertContains('companies.create', $returnedPermissions);
         $this->assertContains('companies.force-delete', $returnedPermissions);
         $this->assertContains('projects.create', $returnedPermissions);
@@ -96,16 +96,16 @@ class SuperAdminLoginTest extends TestCase
 
         // Login with the seeded super admin
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => 'superadmin@margadarsi.com',
-            'password' => 'password123',
+            'email' => 'intelliflowpvtltd@gmail.com',
+            'password' => 'Ashish@7890',
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonPath('user.email', 'superadmin@margadarsi.com')
+            ->assertJsonPath('user.email', 'intelliflowpvtltd@gmail.com')
             ->assertJsonPath('message', 'Login successful.');
 
-        // Verify 49 permissions
-        $this->assertCount(49, $response->json('permissions'));
+        // Verify 59 permissions
+        $this->assertCount(59, $response->json('permissions'));
 
         // Test token works
         $token = $response->json('token');
@@ -114,12 +114,12 @@ class SuperAdminLoginTest extends TestCase
         ]);
         $companiesResponse->assertStatus(200);
 
-        echo "\n✅ Super Admin Login: SUCCESS\n";
-        echo "✅ Email: superadmin@margadarsi.com\n";
-        echo "✅ Password: password123\n";
-        echo "✅ Token Generated: " . substr($token, 0, 20) . "...\n";
-        echo "✅ Permissions Count: 49\n";
-        echo "✅ Protected Route Access: WORKING\n";
+        echo "\n\u2705 Super Admin Login: SUCCESS\n";
+        echo "\u2705 Email: intelliflowpvtltd@gmail.com\n";
+        echo "\u2705 Password: Ashish@7890\n";
+        echo "\u2705 Token Generated: " . substr($token, 0, 20) . "...\n";
+        echo "\u2705 Permissions Count: 59\n";
+        echo "\u2705 Protected Route Access: WORKING\n";
     }
 
     public function test_invalid_credentials_return_401(): void
@@ -129,7 +129,7 @@ class SuperAdminLoginTest extends TestCase
 
         // Try with wrong password
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => 'superadmin@margadarsi.com',
+            'email' => 'intelliflowpvtltd@gmail.com',
             'password' => 'wrongpassword',
         ]);
 

@@ -135,7 +135,7 @@ class UserSeeder extends Seeder
                 'reports_to' => null,
             ],
             [
-                'role' => 'admin',
+                'role' => 'company_admin',
                 'first_name' => 'Admin',
                 'last_name' => 'User',
                 'email' => 'admin@margadarsi.com',
@@ -146,48 +146,48 @@ class UserSeeder extends Seeder
                 'reports_to' => 'super_admin',
             ],
             [
-                'role' => 'sales_director',
+                'role' => 'project_manager',
                 'first_name' => 'Vikram',
                 'last_name' => 'Singh',
                 'email' => 'vikram.singh@margadarsi.com',
                 'phone' => '9876543212',
                 'employee_code' => 'EMP003',
-                'designation' => 'Sales Director',
+                'designation' => 'Project Manager',
                 'department' => 'Sales',
-                'reports_to' => 'admin',
+                'reports_to' => 'company_admin',
             ],
             [
-                'role' => 'sales_manager',
+                'role' => 'senior_sales_executive',
                 'first_name' => 'Rajesh',
                 'last_name' => 'Kumar',
                 'email' => 'rajesh.kumar@margadarsi.com',
                 'phone' => '9876543213',
                 'employee_code' => 'EMP004',
-                'designation' => 'Sales Manager',
+                'designation' => 'Senior Sales Executive',
                 'department' => 'Sales',
-                'reports_to' => 'sales_director',
+                'reports_to' => 'project_manager',
             ],
             [
-                'role' => 'project_manager',
+                'role' => 'sales_executive',
                 'first_name' => 'Priya',
                 'last_name' => 'Sharma',
                 'email' => 'priya.sharma@margadarsi.com',
                 'phone' => '9876543214',
                 'employee_code' => 'EMP005',
-                'designation' => 'Project Manager',
-                'department' => 'Projects',
-                'reports_to' => 'sales_director',
+                'designation' => 'Sales Executive',
+                'department' => 'Sales',
+                'reports_to' => 'senior_sales_executive',
             ],
             [
-                'role' => 'team_lead',
+                'role' => 'team_leader',
                 'first_name' => 'Sneha',
                 'last_name' => 'Reddy',
                 'email' => 'sneha.reddy@margadarsi.com',
                 'phone' => '9876543215',
                 'employee_code' => 'EMP006',
-                'designation' => 'Team Lead',
-                'department' => 'Sales',
-                'reports_to' => 'sales_manager',
+                'designation' => 'Team Leader',
+                'department' => 'Pre-Sales',
+                'reports_to' => 'project_manager',
             ],
             [
                 'role' => 'telecaller',
@@ -197,8 +197,8 @@ class UserSeeder extends Seeder
                 'phone' => '9876543216',
                 'employee_code' => 'EMP007',
                 'designation' => 'Telecaller',
-                'department' => 'Sales',
-                'reports_to' => 'team_lead',
+                'department' => 'Pre-Sales',
+                'reports_to' => 'team_leader',
             ],
             [
                 'role' => 'channel_partner',
@@ -209,7 +209,7 @@ class UserSeeder extends Seeder
                 'employee_code' => 'CP001',
                 'designation' => 'Channel Partner',
                 'department' => 'External',
-                'reports_to' => 'sales_manager',
+                'reports_to' => 'project_manager',
             ],
         ];
 
@@ -313,8 +313,8 @@ class UserSeeder extends Seeder
         );
 
         // Assign users to projects with access levels
-        // Super Admin & Admin - All projects (manager level)
-        foreach (['super_admin', 'admin'] as $role) {
+        // Super Admin & Company Admin - All projects (manager level)
+        foreach (['super_admin', 'company_admin'] as $role) {
             $users[$role]->projects()->syncWithoutDetaching([
                 $project1->id => ['access_level' => 'manager', 'assigned_at' => now()],
                 $project2->id => ['access_level' => 'manager', 'assigned_at' => now()],
@@ -322,38 +322,38 @@ class UserSeeder extends Seeder
             ]);
         }
 
-        // Sales Director - All projects (viewer)
-        $users['sales_director']->projects()->syncWithoutDetaching([
-            $project1->id => ['access_level' => 'viewer', 'assigned_at' => now(), 'assigned_by' => $users['admin']->id],
-            $project2->id => ['access_level' => 'viewer', 'assigned_at' => now(), 'assigned_by' => $users['admin']->id],
-            $project3->id => ['access_level' => 'viewer', 'assigned_at' => now(), 'assigned_by' => $users['admin']->id],
-        ]);
-
-        // Sales Manager - Project 1 & 2 (manager)
-        $users['sales_manager']->projects()->syncWithoutDetaching([
-            $project1->id => ['access_level' => 'manager', 'assigned_at' => now(), 'assigned_by' => $users['sales_director']->id],
-            $project2->id => ['access_level' => 'manager', 'assigned_at' => now(), 'assigned_by' => $users['sales_director']->id],
-        ]);
-
-        // Project Manager - Project 1 (manager)
+        // Project Manager - All projects (manager)
         $users['project_manager']->projects()->syncWithoutDetaching([
-            $project1->id => ['access_level' => 'manager', 'assigned_at' => now(), 'assigned_by' => $users['sales_director']->id],
+            $project1->id => ['access_level' => 'manager', 'assigned_at' => now(), 'assigned_by' => $users['company_admin']->id],
+            $project2->id => ['access_level' => 'manager', 'assigned_at' => now(), 'assigned_by' => $users['company_admin']->id],
+            $project3->id => ['access_level' => 'manager', 'assigned_at' => now(), 'assigned_by' => $users['company_admin']->id],
         ]);
 
-        // Team Lead - Project 1 & 2 (member)
-        $users['team_lead']->projects()->syncWithoutDetaching([
-            $project1->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['sales_manager']->id],
-            $project2->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['sales_manager']->id],
+        // Senior Sales Executive - Project 1 & 2 (member)
+        $users['senior_sales_executive']->projects()->syncWithoutDetaching([
+            $project1->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['project_manager']->id],
+            $project2->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['project_manager']->id],
+        ]);
+
+        // Sales Executive - Project 1 (member)
+        $users['sales_executive']->projects()->syncWithoutDetaching([
+            $project1->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['senior_sales_executive']->id],
+        ]);
+
+        // Team Leader - Project 1 & 2 (member)
+        $users['team_leader']->projects()->syncWithoutDetaching([
+            $project1->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['project_manager']->id],
+            $project2->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['project_manager']->id],
         ]);
 
         // Telecaller - Project 1 (member)
         $users['telecaller']->projects()->syncWithoutDetaching([
-            $project1->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['team_lead']->id],
+            $project1->id => ['access_level' => 'member', 'assigned_at' => now(), 'assigned_by' => $users['team_leader']->id],
         ]);
 
         // Channel Partner - Project 1 (viewer)
         $users['channel_partner']->projects()->syncWithoutDetaching([
-            $project1->id => ['access_level' => 'viewer', 'assigned_at' => now(), 'assigned_by' => $users['sales_manager']->id],
+            $project1->id => ['access_level' => 'viewer', 'assigned_at' => now(), 'assigned_by' => $users['project_manager']->id],
         ]);
     }
 
@@ -366,11 +366,11 @@ class UserSeeder extends Seeder
             ['Role', 'Email', 'Password', 'Projects'],
             [
                 ['Super Admin', 'intelliflowpvtltd@gmail.com', 'Ashish@7890', '3 (All)'],
-                ['Admin', 'admin@margadarsi.com', 'password123', '3 (All)'],
-                ['Sales Director', 'vikram.singh@margadarsi.com', 'password123', '3 (All)'],
-                ['Sales Manager', 'rajesh.kumar@margadarsi.com', 'password123', '2 (Heights, Tech Park)'],
-                ['Project Manager', 'priya.sharma@margadarsi.com', 'password123', '1 (Heights)'],
-                ['Team Lead', 'sneha.reddy@margadarsi.com', 'password123', '2 (Heights, Tech Park)'],
+                ['Company Admin', 'admin@margadarsi.com', 'password123', '3 (All)'],
+                ['Project Manager', 'vikram.singh@margadarsi.com', 'password123', '3 (All)'],
+                ['Sr. Sales Exec', 'rajesh.kumar@margadarsi.com', 'password123', '2 (Heights, Tech Park)'],
+                ['Sales Executive', 'priya.sharma@margadarsi.com', 'password123', '1 (Heights)'],
+                ['Team Leader', 'sneha.reddy@margadarsi.com', 'password123', '2 (Heights, Tech Park)'],
                 ['Telecaller', 'rahul.verma@margadarsi.com', 'password123', '1 (Heights)'],
                 ['Channel Partner', 'amit.patel@margadarsi.com', 'password123', '1 (Heights)'],
             ]

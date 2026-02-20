@@ -22,8 +22,8 @@ class PermissionTest extends TestCase
 
     public function test_all_permissions_are_seeded(): void
     {
-        // companies: 6, projects: 7, roles: 7, users: 7, teams: 4, leads: 8, incentives: 4, reports: 4, settings: 2 = 49 total
-        $this->assertEquals(49, Permission::count());
+        // companies: 6, projects: 7, departments: 5, roles: 7, users: 7, teams: 4, leads: 11, incentives: 4, reports: 4, settings: 2, masters: 2 = 59 total
+        $this->assertEquals(59, Permission::count());
     }
 
     public function test_permissions_grouped_by_module(): void
@@ -76,7 +76,7 @@ class PermissionTest extends TestCase
         $allPermissions = Permission::all();
         $superAdmin->permissions()->sync($allPermissions->pluck('id'));
 
-        $this->assertEquals(49, $superAdmin->permissions()->count());
+        $this->assertEquals(59, $superAdmin->permissions()->count());
     }
 
     public function test_sales_executive_has_limited_permissions(): void
@@ -121,7 +121,7 @@ class PermissionTest extends TestCase
         $names = Permission::getAllPermissionNames();
 
         $this->assertIsArray($names);
-        $this->assertCount(49, $names);
+        $this->assertCount(59, $names);
         $this->assertContains('companies.view', $names);
         $this->assertContains('projects.create', $names);
         $this->assertContains('roles.seed', $names);
