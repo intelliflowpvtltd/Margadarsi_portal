@@ -142,12 +142,20 @@ Route::middleware('auth')->group(function () {
 
 
     // ==================== LEADS ====================
-    Route::get('/leads', function () {
-        return view('leads.index');
-    })->name('leads.index');
-    Route::get('/leads/{lead}', function ($lead) {
-        return view('leads.show', ['leadId' => $lead]);
-    })->name('leads.show');
+    Route::middleware('permission:leads.view')->group(function () {
+        Route::get('/leads', function () {
+            return view('leads.index');
+        })->name('leads.index');
+        Route::get('/leads/create', function () {
+            return view('leads.create');
+        })->name('leads.create');
+        Route::get('/leads/{lead}', function ($lead) {
+            return view('leads.show', ['leadId' => $lead]);
+        })->name('leads.show');
+        Route::get('/leads/{lead}/edit', function ($lead) {
+            return view('leads.edit', ['leadId' => $lead]);
+        })->name('leads.edit');
+    });
 
     // ==================== MASTER DATA MANAGEMENT ====================
     

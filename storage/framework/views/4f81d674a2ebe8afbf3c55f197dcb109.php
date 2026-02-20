@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
 
-    <title>@yield('title', 'Margadarsi Portal') - Real Estate Management</title>
+    <title><?php echo $__env->yieldContent('title', 'Margadarsi Portal'); ?> - Real Estate Management</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <link rel="icon" type="image/png" href="<?php echo e(asset('favicon.png')); ?>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,7 +88,7 @@
         }
     </style>
 
-    @stack('styles')
+    <?php echo $__env->yieldPushContent('styles'); ?>
 
     <style>
         /* Layout Structure */
@@ -1522,13 +1522,13 @@
         <!-- Middle Navigation Section (Scrollable) -->
         <nav class="sidebar-nav">
             <!-- 1. Dashboard (Daily Use) -->
-            <a href="{{ route('dashboard') }}" class="sidebar-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="<?php echo e(route('dashboard')); ?>" class="sidebar-nav-link <?php echo e(request()->routeIs('dashboard') ? 'active' : ''); ?>">
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
 
             <!-- 2-6. Lead Management Section (5 Items) -->
-            <a href="{{ route('leads.index') }}" class="sidebar-nav-link {{ request()->routeIs('leads.*') ? 'active' : '' }}">
+            <a href="<?php echo e(route('leads.index')); ?>" class="sidebar-nav-link <?php echo e(request()->routeIs('leads.*') ? 'active' : ''); ?>">
                 <i class="bi bi-telephone"></i>
                 <span>Leads</span>
             </a>
@@ -1631,19 +1631,19 @@
             <div class="sidebar-section-divider"></div>
 
             <!-- 8. Users (Frequent) -->
-            <a href="{{ route('users.index') }}" class="sidebar-nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+            <a href="<?php echo e(route('users.index')); ?>" class="sidebar-nav-link <?php echo e(request()->routeIs('users.*') ? 'active' : ''); ?>">
                 <i class="bi bi-people"></i>
                 <span>Users</span>
             </a>
 
             <!-- 9. Roles (Frequent) -->
-            <a href="{{ route('roles.index') }}" class="sidebar-nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+            <a href="<?php echo e(route('roles.index')); ?>" class="sidebar-nav-link <?php echo e(request()->routeIs('roles.*') ? 'active' : ''); ?>">
                 <i class="bi bi-shield-check"></i>
                 <span>Roles</span>
             </a>
 
             <!-- 10. Departments (Moderate Use) -->
-            <a href="{{ route('departments.index') }}" class="sidebar-nav-link {{ request()->routeIs('departments.*') ? 'active' : '' }}">
+            <a href="<?php echo e(route('departments.index')); ?>" class="sidebar-nav-link <?php echo e(request()->routeIs('departments.*') ? 'active' : ''); ?>">
                 <i class="bi bi-diagram-3"></i>
                 <span>Departments</span>
             </a>
@@ -1652,13 +1652,13 @@
             <div class="sidebar-section-divider"></div>
 
             <!-- 11. Projects (Less Frequent) -->
-            <a href="{{ route('projects.index') }}" class="sidebar-nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}">
+            <a href="<?php echo e(route('projects.index')); ?>" class="sidebar-nav-link <?php echo e(request()->routeIs('projects.*') ? 'active' : ''); ?>">
                 <i class="bi bi-briefcase"></i>
                 <span>Projects</span>
             </a>
 
             <!-- 12. Companies (Less Frequent) -->
-            <a href="{{ route('companies.index') }}" class="sidebar-nav-link {{ request()->routeIs('companies.*') ? 'active' : '' }}">
+            <a href="<?php echo e(route('companies.index')); ?>" class="sidebar-nav-link <?php echo e(request()->routeIs('companies.*') ? 'active' : ''); ?>">
                 <i class="bi bi-building"></i>
                 <span>Companies</span>
             </a>
@@ -1672,8 +1672,8 @@
 
         <!-- Bottom Footer Section (Fixed 70px) -->
         <div class="sidebar-footer">
-            <form action="{{ route('logout') }}" method="POST" class="w-100">
-                @csrf
+            <form action="<?php echo e(route('logout')); ?>" method="POST" class="w-100">
+                <?php echo csrf_field(); ?>
                 <button type="submit" class="logout-btn">
                     <i class="bi bi-box-arrow-right"></i>
                     <span>Logout</span>
@@ -1809,14 +1809,17 @@
                 <div class="dropdown">
                     <div class="user-dropdown" data-bs-toggle="dropdown">
                         <div class="user-avatar">
-                            {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}{{ strtoupper(substr(auth()->user()->last_name, 0, 1)) }}
+                            <?php echo e(strtoupper(substr(auth()->user()->first_name, 0, 1))); ?><?php echo e(strtoupper(substr(auth()->user()->last_name, 0, 1))); ?>
+
                         </div>
                         <div class="d-none d-md-block">
                             <div style="font-weight: var(--fw-medium); font-size: var(--fs-small);">
-                                {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}
+                                <?php echo e(auth()->user()->first_name); ?> <?php echo e(auth()->user()->last_name); ?>
+
                             </div>
                             <div style="font-size: var(--fs-tiny); color: var(--color-text-muted);">
-                                {{ auth()->user()->role->name }}
+                                <?php echo e(auth()->user()->role->name); ?>
+
                             </div>
                         </div>
                         <i class="bi bi-chevron-down"></i>
@@ -1828,8 +1831,8 @@
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <form action="{{ route('logout') }}" method="POST">
-                                @csrf
+                            <form action="<?php echo e(route('logout')); ?>" method="POST">
+                                <?php echo csrf_field(); ?>
                                 <button type="submit" class="dropdown-item text-danger">
                                     <i class="bi bi-box-arrow-right me-2"></i> Logout
                                 </button>
@@ -1843,23 +1846,25 @@
         <!-- Page Content -->
         <main class="content-wrapper">
             <!-- Success/Error Messages -->
-            @if(session('success'))
+            <?php if(session('success')): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <i class="bi bi-check-circle me-2"></i>
-                {{ session('success') }}
+                <?php echo e(session('success')); ?>
+
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            @endif
+            <?php endif; ?>
 
-            @if(session('error'))
+            <?php if(session('error')): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="bi bi-exclamation-circle me-2"></i>
-                {{ session('error') }}
+                <?php echo e(session('error')); ?>
+
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            @endif
+            <?php endif; ?>
 
-            @yield('content')
+            <?php echo $__env->yieldContent('content'); ?>
         </main>
     </div>
 
@@ -1915,7 +1920,7 @@
         }
     </script>
 
-    @stack('scripts')
+    <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 
-</html>
+</html><?php /**PATH E:\Margadarsi_portal\resources\views/layouts/app.blade.php ENDPATH**/ ?>

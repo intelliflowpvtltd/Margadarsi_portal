@@ -3,10 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DisqualifyLeadRequest;
+use App\Http\Requests\HandoverLeadRequest;
+use App\Http\Requests\LogCallRequest;
+use App\Http\Requests\MarkLostLeadRequest;
+use App\Http\Requests\ScheduleFollowupRequest;
+use App\Http\Requests\StoreLeadRequest;
+use App\Http\Requests\TransitionStatusRequest;
+use App\Http\Requests\UpdateLeadRequest;
 use App\Models\Lead;
 use App\Services\LeadWorkflowService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class LeadController extends Controller
 {
@@ -106,44 +113,16 @@ class LeadController extends Controller
     /**
      * Store a newly created lead.
      */
-    public function store(Request $request)
+    public function store(StoreLeadRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'company_id' => 'required|exists:companies,id',
-            'project_id' => 'required|exists:projects,id',
-            'name' => 'required|string|max:255',
-            'mobile' => 'required|string|max:15',
-            'alt_mobile' => 'nullable|string|max:15',
-            'whatsapp' => 'nullable|string|max:15',
-            'email' => 'nullable|email|max:255',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'pincode' => 'nullable|string|max:10',
-            'address' => 'nullable|string',
-            'lead_source_id' => 'nullable|exists:lead_sources,id',
-            'temperature_tag_id' => 'nullable|exists:temperature_tags,id',
-            'budget_range_id' => 'nullable|exists:budget_ranges,id',
-            'property_type_id' => 'nullable|exists:property_types,id',
-            'timeline_id' => 'nullable|exists:timelines,id',
-            'requirements_notes' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $lead = Lead::create(array_merge($validator->validated(), [
+        $lead = Lead::create(array_merge($request->validated(), [
             'status' => Lead::STATUS_NEW,
             'stage' => Lead::STAGE_NEW,
         ]));
 
         // Auto-assign lead
         $assignmentService = app(\App\Services\LeadAssignmentService::class);
-        $assignmentService->assignLead($lead);
+        $assignee = $assignmentService->assignLead($lead);
 
         $lead->load(['project', 'currentAssignee', 'temperatureTag', 'leadSource']);
 
@@ -193,36 +172,11 @@ class LeadController extends Controller
     /**
      * Update the specified lead.
      */
-    public function update(Request $request, Lead $lead)
+    public function update(UpdateLeadRequest $request, Lead $lead)
     {
         $this->authorize('update', $lead);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'mobile' => 'sometimes|string|max:15',
-            'alt_mobile' => 'nullable|string|max:15',
-            'whatsapp' => 'nullable|string|max:15',
-            'email' => 'nullable|email|max:255',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'pincode' => 'nullable|string|max:10',
-            'address' => 'nullable|string',
-            'temperature_tag_id' => 'nullable|exists:temperature_tags,id',
-            'budget_range_id' => 'nullable|exists:budget_ranges,id',
-            'property_type_id' => 'nullable|exists:property_types,id',
-            'timeline_id' => 'nullable|exists:timelines,id',
-            'requirements_notes' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $lead->update($validator->validated());
+        $lead->update($request->validated());
 
         return response()->json([
             'success' => true,
@@ -249,34 +203,11 @@ class LeadController extends Controller
     /**
      * Log a call for the lead.
      */
-    public function logCall(Request $request, Lead $lead)
+    public function logCall(LogCallRequest $request, Lead $lead)
     {
         $this->authorize('update', $lead);
 
-        $validator = Validator::make($request->all(), [
-            'attempt_outcome' => 'required|string',
-            'call_outcome' => 'nullable|string',
-            'duration_seconds' => 'nullable|integer|min:0',
-            'started_at' => 'nullable|date',
-            'ended_at' => 'nullable|date',
-            'summary' => 'nullable|string',
-            'recording_url' => 'nullable|url',
-            'temperature_tag_id' => 'nullable|exists:temperature_tags,id',
-            'next_followup_at' => 'nullable|date',
-            'action_items' => 'nullable|string',
-            'nq_reason_id' => 'nullable|exists:nq_reasons,id',
-            'retry_scheduled_at' => 'nullable|date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $call = $this->workflowService->logCall($lead, $validator->validated());
+        $call = $this->workflowService->logCall($lead, $request->validated());
 
         return response()->json([
             'success' => true,
@@ -289,24 +220,9 @@ class LeadController extends Controller
     /**
      * Transition lead status.
      */
-    public function transitionStatus(Request $request, Lead $lead)
+    public function transitionStatus(TransitionStatusRequest $request, Lead $lead)
     {
         $this->authorize('update', $lead);
-
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|string',
-            'reason' => 'nullable|string',
-            'nq_reason_id' => 'nullable|exists:nq_reasons,id',
-            'closure_reason_id' => 'nullable|exists:closure_reasons,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
 
         try {
             $this->workflowService->transitionStatus(
@@ -356,22 +272,9 @@ class LeadController extends Controller
     /**
      * Mark lead as not qualified.
      */
-    public function markNotQualified(Request $request, Lead $lead)
+    public function markNotQualified(DisqualifyLeadRequest $request, Lead $lead)
     {
         $this->authorize('update', $lead);
-
-        $validator = Validator::make($request->all(), [
-            'nq_reason_id' => 'required|exists:nq_reasons,id',
-            'notes' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
 
         try {
             $this->workflowService->markNotQualified(
@@ -396,7 +299,7 @@ class LeadController extends Controller
     /**
      * Hand over lead to sales team.
      */
-    public function handOver(Request $request, Lead $lead)
+    public function handOver(HandoverLeadRequest $request, Lead $lead)
     {
         $this->authorize('update', $lead);
 
@@ -419,22 +322,9 @@ class LeadController extends Controller
     /**
      * Mark lead as lost.
      */
-    public function markLost(Request $request, Lead $lead)
+    public function markLost(MarkLostLeadRequest $request, Lead $lead)
     {
         $this->authorize('update', $lead);
-
-        $validator = Validator::make($request->all(), [
-            'closure_reason_id' => 'required|exists:closure_reasons,id',
-            'notes' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
 
         try {
             $this->workflowService->markLost(
@@ -459,22 +349,9 @@ class LeadController extends Controller
     /**
      * Schedule a follow-up.
      */
-    public function scheduleFollowup(Request $request, Lead $lead)
+    public function scheduleFollowup(ScheduleFollowupRequest $request, Lead $lead)
     {
         $this->authorize('update', $lead);
-
-        $validator = Validator::make($request->all(), [
-            'followup_at' => 'required|date|after:now',
-            'notes' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
 
         $this->workflowService->scheduleFollowup(
             $lead,

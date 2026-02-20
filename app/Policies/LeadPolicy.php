@@ -22,7 +22,7 @@ class LeadPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->is_active && $user->hasPermission('leads_view');
+        return $user->is_active && $user->hasPermission('leads.view');
     }
 
     /**
@@ -31,7 +31,7 @@ class LeadPolicy
      */
     public function view(User $user, Lead $lead): bool
     {
-        if (!$user->is_active || !$user->hasPermission('leads_view')) {
+        if (!$user->is_active || !$user->hasPermission('leads.view')) {
             return false;
         }
         return $this->scopeService->canView($user, $lead);
@@ -42,7 +42,7 @@ class LeadPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_active && $user->hasPermission('leads_create');
+        return $user->is_active && $user->hasPermission('leads.create');
     }
 
     /**
@@ -51,7 +51,7 @@ class LeadPolicy
      */
     public function update(User $user, Lead $lead): bool
     {
-        if (!$user->is_active || !$user->hasPermission('leads_update')) {
+        if (!$user->is_active || !$user->hasPermission('leads.update')) {
             return false;
         }
         return $this->scopeService->canManage($user, $lead);
@@ -62,7 +62,7 @@ class LeadPolicy
      */
     public function delete(User $user, Lead $lead): bool
     {
-        if (!$user->is_active || !$user->hasPermission('leads_delete')) {
+        if (!$user->is_active || !$user->hasPermission('leads.delete')) {
             return false;
         }
         return $this->scopeService->canManage($user, $lead);
@@ -73,7 +73,7 @@ class LeadPolicy
      */
     public function restore(User $user, Lead $lead): bool
     {
-        if (!$user->is_active || !$user->hasPermission('leads_delete')) {
+        if (!$user->is_active || !$user->hasPermission('leads.delete')) {
             return false;
         }
         return $this->scopeService->canManage($user, $lead);
@@ -84,7 +84,7 @@ class LeadPolicy
      */
     public function forceDelete(User $user, Lead $lead): bool
     {
-        return $user->is_active && $user->hasPermission('leads_force_delete');
+        return $user->is_active && $user->hasPermission('leads.force_delete');
     }
 
     /**
@@ -92,7 +92,7 @@ class LeadPolicy
      */
     public function reassign(User $user, Lead $lead): bool
     {
-        if (!$user->is_active || !$user->hasPermission('leads_update')) {
+        if (!$user->is_active || !$user->hasPermission('leads.update')) {
             return false;
         }
 

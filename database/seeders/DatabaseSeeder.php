@@ -20,7 +20,9 @@ class DatabaseSeeder extends Seeder
         // 6. Permissions assigned to roles
         // 7. Users with proper role assignments
         $this->call([
-            OrganizationSeeder::class,
+            MasterDataSeeder::class,          // Countries, PropertyTypes, BudgetRanges, Timelines, SourceCategories
+            OrganizationSeeder::class,         // Company, Projects, Departments, Roles, Users
+            CompanyMasterDataSeeder::class,    // LeadSources, LeadStatuses, LeadStages, TemperatureTags, ClosureReasons, NqReasons
         ]);
     }
 }

@@ -17,7 +17,7 @@
     </div>
 
     <!-- Main Content (hidden until loaded) -->
-    <div id="mainContent" style="display:none">
+    <div id="mainContent" class="lead-show-container" style="display:none">
         <!-- Header Bar -->
         <div class="lead-header-card mb-4">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
@@ -40,9 +40,9 @@
             </div>
         </div>
 
-        <div class="row g-4">
+        <div class="row g-3 lead-main-row">
             <!-- Left Column: Details + Timeline -->
-            <div class="col-lg-8">
+            <div class="col-lg-8 lead-col-scroll">
                 <!-- Info Cards -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
@@ -133,7 +133,7 @@
             </div>
 
             <!-- Right Column: Actions + Quick Info -->
-            <div class="col-lg-4">
+            <div class="col-lg-4 lead-col-scroll">
                 <!-- Workflow Actions -->
                 <div class="premium-card mb-4">
                     <div class="card-header-premium">
@@ -149,28 +149,44 @@
                     </div>
                     <div class="p-3">
                         <form id="logCallForm">
-                            <div class="mb-3">
-                                <label class="form-label">Outcome *</label>
-                                <select class="form-select form-select-sm" name="outcome" required>
+                            <div class="mb-2">
+                                <label class="form-label" style="font-size:0.8125rem">Attempt Outcome *</label>
+                                <select class="form-select form-select-sm" name="attempt_outcome" required>
                                     <option value="">Select outcome</option>
                                     <option value="connected">Connected</option>
-                                    <option value="no_answer">No Answer</option>
+                                    <option value="not_answering">Not Answering</option>
                                     <option value="busy">Busy</option>
                                     <option value="switched_off">Switched Off</option>
                                     <option value="wrong_number">Wrong Number</option>
-                                    <option value="voicemail">Voicemail</option>
+                                    <option value="callback_requested">Callback Requested</option>
+                                    <option value="not_reachable">Not Reachable</option>
+                                    <option value="invalid_number">Invalid Number</option>
+                                    <option value="dnd_activated">DND Activated</option>
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Duration (seconds)</label>
+                            <div class="mb-2" id="callOutcomeGroup" style="display:none">
+                                <label class="form-label" style="font-size:0.8125rem">Call Outcome</label>
+                                <select class="form-select form-select-sm" name="call_outcome">
+                                    <option value="">Select</option>
+                                    <option value="interested">Interested</option>
+                                    <option value="not_interested">Not Interested</option>
+                                    <option value="followup_needed">Follow-up Needed</option>
+                                    <option value="qualified">Qualified (Ready)</option>
+                                    <option value="not_qualified">Not Qualified</option>
+                                    <option value="thinking">Thinking/Considering</option>
+                                    <option value="visit_scheduled">Site Visit Scheduled</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label" style="font-size:0.8125rem">Duration (seconds)</label>
                                 <input type="number" class="form-control form-control-sm" name="duration_seconds" min="0">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Notes</label>
-                                <textarea class="form-control form-control-sm" name="notes" rows="2"></textarea>
+                            <div class="mb-2">
+                                <label class="form-label" style="font-size:0.8125rem">Notes</label>
+                                <textarea class="form-control form-control-sm" name="summary" rows="2"></textarea>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Next Follow-up</label>
+                            <div class="mb-2">
+                                <label class="form-label" style="font-size:0.8125rem">Next Follow-up</label>
                                 <input type="datetime-local" class="form-control form-control-sm" name="next_followup_at">
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm w-100">
@@ -222,15 +238,7 @@
             <div class="mb-3">
                 <label class="form-label">Reason *</label>
                 <select class="form-select" id="nqReasonSelect" required>
-                    <option value="">Select reason</option>
-                    <option value="invalid_contact">Invalid Contact</option>
-                    <option value="not_interested">Not Interested</option>
-                    <option value="already_purchased">Already Purchased</option>
-                    <option value="budget_mismatch">Budget Mismatch</option>
-                    <option value="location_mismatch">Location Mismatch</option>
-                    <option value="duplicate">Duplicate Lead</option>
-                    <option value="spam">Spam/Fake</option>
-                    <option value="wrong_number">Wrong Number</option>
+                    <option value="">Loading reasons...</option>
                 </select>
             </div>
             <div class="mb-3">
@@ -253,14 +261,7 @@
             <div class="mb-3">
                 <label class="form-label">Reason *</label>
                 <select class="form-select" id="lostReasonSelect" required>
-                    <option value="">Select reason</option>
-                    <option value="budget_constraints">Budget Constraints</option>
-                    <option value="competitor">Bought from Competitor</option>
-                    <option value="location">Location Not Suitable</option>
-                    <option value="project_delay">Project Delayed</option>
-                    <option value="financial">Financial Issues</option>
-                    <option value="changed_mind">Changed Mind</option>
-                    <option value="better_deal">Better Deal Elsewhere</option>
+                    <option value="">Loading reasons...</option>
                 </select>
             </div>
             <div class="mb-3">
@@ -302,17 +303,17 @@
     .lead-header-card {
         background: linear-gradient(135deg, rgba(128,0,32,0.03), rgba(184,149,106,0.06));
         border: 1px solid rgba(184,149,106,0.2);
-        border-radius: 16px;
-        padding: 1.5rem 2rem;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
     }
     .lead-avatar {
-        width: 56px; height: 56px;
+        width: 48px; height: 48px;
         background: linear-gradient(135deg, var(--color-dark-maroon), var(--color-coffee-gold));
         border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
-        color: white; font-size: 1.5rem; font-weight: 700;
+        color: white; font-size: 1.25rem; font-weight: 700;
     }
-    .lead-title { font-family: var(--font-primary); color: var(--color-dark-maroon); font-size: 1.5rem; font-weight: 700; }
+    .lead-title { font-family: var(--font-primary); color: var(--color-dark-maroon); font-size: 1.25rem; font-weight: 700; }
     .status-badge {
         padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
         text-transform: uppercase; letter-spacing: 0.5px;
@@ -327,13 +328,13 @@
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
     .mini-stat-card {
-        background: white; border: 1px solid rgba(184,149,106,0.15); border-radius: 12px;
-        padding: 1rem; text-align: center; transition: transform 0.2s;
+        background: white; border: 1px solid rgba(184,149,106,0.15); border-radius: 10px;
+        padding: 0.75rem; text-align: center; transition: transform 0.2s;
     }
-    .mini-stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-    .mini-stat-icon { font-size: 1.25rem; color: var(--color-coffee-gold); margin-bottom: 0.25rem; }
-    .mini-stat-value { font-size: 1.5rem; font-weight: 700; color: var(--color-dark-maroon); }
-    .mini-stat-label { font-size: 0.75rem; color: var(--color-text-secondary); }
+    .mini-stat-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .mini-stat-icon { font-size: 1.1rem; color: var(--color-coffee-gold); margin-bottom: 0.125rem; }
+    .mini-stat-value { font-size: 1.25rem; font-weight: 700; color: var(--color-dark-maroon); }
+    .mini-stat-label { font-size: 0.7rem; color: var(--color-text-secondary); }
 
     .premium-card {
         background: white; border: 1px solid rgba(184,149,106,0.15); border-radius: 12px;
@@ -414,6 +415,33 @@
         background: linear-gradient(135deg, rgba(128,0,32,0.05), rgba(184,149,106,0.05));
         border-bottom: 1px solid rgba(184,149,106,0.2);
     }
+
+    /* Scrollable content areas */
+    .lead-show-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .lead-main-row {
+        flex: 1;
+    }
+
+    .lead-col-scroll {
+        max-height: calc(100vh - 280px);
+        overflow-y: auto;
+    }
+
+    /* Custom scrollbar for columns */
+    .lead-col-scroll::-webkit-scrollbar {
+        width: 5px;
+    }
+    .lead-col-scroll::-webkit-scrollbar-thumb {
+        background: rgba(184,149,106,0.3);
+        border-radius: 3px;
+    }
+    .lead-col-scroll::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.02);
+    }
 </style>
 @endpush
 
@@ -426,8 +454,21 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadLeadDetail();
+        loadNqReasons();
+        loadClosureReasons();
         document.getElementById('logCallForm').addEventListener('submit', submitLogCall);
         document.getElementById('followupForm').addEventListener('submit', submitFollowup);
+
+        // Show/hide call_outcome field based on attempt_outcome
+        const attemptSelect = document.querySelector('select[name="attempt_outcome"]');
+        if (attemptSelect) {
+            attemptSelect.addEventListener('change', function() {
+                const group = document.getElementById('callOutcomeGroup');
+                if (group) {
+                    group.style.display = this.value === 'connected' ? 'block' : 'none';
+                }
+            });
+        }
     });
 
     async function loadLeadDetail() {
@@ -633,15 +674,16 @@
 
         if (calls.length === 0) return;
 
-        const outcomeCls = { connected: 'call-connected', no_answer: 'call-missed', busy: 'call-busy', switched_off: 'call-missed', wrong_number: 'call-missed' };
+        const outcomeCls = { connected: 'call-connected', not_answering: 'call-missed', busy: 'call-busy', switched_off: 'call-missed', wrong_number: 'call-missed', not_reachable: 'call-missed', invalid_number: 'call-missed', callback_requested: 'call-busy', dnd_activated: 'call-missed' };
 
         document.getElementById('callHistory').innerHTML = calls.map(c => `
             <div class="call-item">
                 <i class="bi bi-telephone fs-5 text-muted"></i>
                 <div class="flex-grow-1">
-                    <span class="call-outcome-badge ${outcomeCls[c.outcome] || 'call-busy'}">${c.outcome?.replace('_',' ')}</span>
+                    <span class="call-outcome-badge ${outcomeCls[c.attempt_outcome] || 'call-busy'}">${c.attempt_outcome?.replace(/_/g,' ')}</span>
+                    ${c.call_outcome ? `<span class="ms-2 badge bg-info bg-opacity-10 text-info">${c.call_outcome?.replace(/_/g,' ')}</span>` : ''}
                     ${c.duration_seconds ? `<span class="ms-2 text-muted small">${c.duration_seconds}s</span>` : ''}
-                    ${c.notes ? `<p class="mb-0 mt-1 small text-muted">${c.notes}</p>` : ''}
+                    ${c.summary ? `<p class="mb-0 mt-1 small text-muted">${c.summary}</p>` : ''}
                 </div>
                 <span class="text-muted small">${formatDate(c.created_at)}</span>
             </div>
@@ -664,10 +706,10 @@
     function showHandoverModal() { new bootstrap.Modal(document.getElementById('handoverModal')).show(); }
 
     async function submitNQ() {
-        const reason = document.getElementById('nqReasonSelect').value;
-        if (!reason) { showToast('Select a reason', 'warning'); return; }
+        const nqReasonId = document.getElementById('nqReasonSelect').value;
+        if (!nqReasonId) { showToast('Select a reason', 'warning'); return; }
         await apiPost(`${API_BASE}/${LEAD_ID}/disqualify`, {
-            reason: reason,
+            nq_reason_id: nqReasonId,
             notes: document.getElementById('nqNotes').value
         });
         bootstrap.Modal.getInstance(document.getElementById('nqModal')).hide();
@@ -675,11 +717,10 @@
     }
 
     async function submitLost() {
-        const reason = document.getElementById('lostReasonSelect').value;
-        if (!reason) { showToast('Select a reason', 'warning'); return; }
+        const closureReasonId = document.getElementById('lostReasonSelect').value;
+        if (!closureReasonId) { showToast('Select a reason', 'warning'); return; }
         await apiPost(`${API_BASE}/${LEAD_ID}/mark-lost`, {
-            reason: reason,
-            competitor: document.getElementById('lostCompetitor').value,
+            closure_reason_id: closureReasonId,
             notes: document.getElementById('lostNotes').value
         });
         bootstrap.Modal.getInstance(document.getElementById('lostModal')).hide();
@@ -750,6 +791,41 @@
         toast.textContent = message;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ========== Dynamic Dropdown Loaders ==========
+    async function loadNqReasons() {
+        try {
+            const res = await fetch('/api/v1/nq-reasons', {
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+            const select = document.getElementById('nqReasonSelect');
+            if (select && data.data) {
+                select.innerHTML = '<option value="">Select reason</option>' +
+                    data.data.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            }
+        } catch (err) {
+            console.error('Error loading NQ reasons:', err);
+        }
+    }
+
+    async function loadClosureReasons() {
+        try {
+            const res = await fetch('/api/v1/closure-reasons', {
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+            const select = document.getElementById('lostReasonSelect');
+            if (select && data.data) {
+                select.innerHTML = '<option value="">Select reason</option>' +
+                    data.data.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            }
+        } catch (err) {
+            console.error('Error loading closure reasons:', err);
+        }
     }
 </script>
 @endpush

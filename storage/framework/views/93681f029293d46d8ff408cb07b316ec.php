@@ -1,13 +1,11 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Leads'); ?>
 
-@section('title', 'Leads')
-
-@section('breadcrumbs')
-<li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+<?php $__env->startSection('breadcrumbs'); ?>
+<li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>">Home</a></li>
 <li class="breadcrumb-item active">Leads</li>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <!-- Page Header -->
 <div class="leads-page-header">
     <div class="d-flex justify-content-between align-items-center">
@@ -19,7 +17,7 @@
             <p class="text-muted mb-0" style="font-size:0.875rem;">Track and manage your sales leads through the pipeline</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('leads.create') }}" class="btn btn-outline-primary">
+            <a href="<?php echo e(route('leads.create')); ?>" class="btn btn-outline-primary">
                 <i class="bi bi-plus-circle me-1"></i>
                 Full Form
             </a>
@@ -306,9 +304,9 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     /* Page Header */
     .leads-page-header {
@@ -603,9 +601,9 @@
         .kanban-column { flex: 0 0 230px; }
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
     const API_BASE_URL = '/api/v1/leads';
     let currentFilters = {
@@ -897,7 +895,8 @@
                 credentials: 'same-origin',
                 body: JSON.stringify({
                     ...data,
-                    company_id: {{ auth()->user()->company_id }}
+                    company_id: <?php echo e(auth()->user()->company_id); ?>
+
                 })
             });
 
@@ -926,7 +925,7 @@
         if (e.target.id === 'filterProject') {
             currentFilters.project_id = e.target.value;
         } else if (e.target.id === 'filterAssignee') {
-            currentFilters.assignee_id = e.target.value === 'me' ? {{ auth()->id() }} : e.target.value;
+            currentFilters.assignee_id = e.target.value === 'me' ? <?php echo e(auth()->id()); ?> : e.target.value;
         }
         loadLeads();
     }
@@ -960,4 +959,6 @@
         };
     }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\Margadarsi_portal\resources\views/leads/index.blade.php ENDPATH**/ ?>

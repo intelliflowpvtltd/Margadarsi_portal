@@ -135,6 +135,18 @@ Route::prefix('v1')->group(function () {
         Route::delete('users/{user}/projects/{project}', [UserController::class, 'removeProject'])
             ->middleware('permission:users.assign-projects');
 
+        // ==================== LOOKUP ROUTES (Read-Only for Form Dropdowns) ====================
+        Route::get('lead-sources', [\App\Http\Controllers\Api\LookupController::class, 'leadSources']);
+        Route::get('budget-ranges', [\App\Http\Controllers\Api\LookupController::class, 'budgetRanges']);
+        Route::get('property-types', [\App\Http\Controllers\Api\LookupController::class, 'propertyTypes']);
+        Route::get('timelines', [\App\Http\Controllers\Api\LookupController::class, 'timelines']);
+        Route::get('temperature-tags', [\App\Http\Controllers\Api\LookupController::class, 'temperatureTags']);
+        Route::get('closure-reasons', [\App\Http\Controllers\Api\LookupController::class, 'closureReasons']);
+        Route::get('nq-reasons', [\App\Http\Controllers\Api\LookupController::class, 'nqReasons']);
+        Route::get('source-categories', [\App\Http\Controllers\Api\LookupController::class, 'sourceCategories']);
+        Route::get('lead-statuses', [\App\Http\Controllers\Api\LookupController::class, 'leadStatuses']);
+        Route::get('lead-stages', [\App\Http\Controllers\Api\LookupController::class, 'leadStages']);
+
         // ==================== LEAD ROUTES ====================
         Route::get('leads', [\App\Http\Controllers\Api\LeadController::class, 'index'])
             ->middleware('permission:leads.view');
